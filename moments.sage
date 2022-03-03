@@ -2,7 +2,7 @@ import csv
 from sage.rings.polynomial.weil.weil_polynomials import WeilPolynomials
 
 # Global objects
-prec = 200 # precision
+prec = 20 # precision
 CC = ComplexField(prec)
 R.<x> = PolynomialRing(QQ)
 
@@ -10,16 +10,17 @@ R.<x> = PolynomialRing(QQ)
 Potentially usefull functions
 '''
 
-# This function takes a list and kills repeats. 
 def kill_repeats(mylist):
+    """This function takes a list and kills repeats. """
     newlist=[]
     for l in mylist:
         if newlist.count(l)==0:
             newlist.append(l)
     return newlist
 
-# This is the S-unit algorithm for calculating angle rank of a q-weil polynomial 'poly'
+
 def angle_rank(poly):
+    """This is the S-unit algorithm for calculating angle rank of a q-weil polynomial 'poly'"""
     #p is the prime dividing q
     p = radical(poly.coefficients()[0])
     K.<a> = poly.splitting_field()
@@ -35,14 +36,16 @@ def angle_rank(poly):
     M = Matrix(l2)
     return M.rank()-1
 
-# Numerical algorithm that calculates the Frobenius angles
+
 def num_angles(poly, prec=500):
-    myroots = poly.roots(ComplexField(prec))
-    angles = [z[0].argument() for z in myroots]
+    """Numerical algorithm that calculates the Frobenius angles"""
+    myroots = poly.radical().roots(ComplexField(prec))
+    angles = [z[0].argument()/RealField(prec)(pi) for z in myroots]
     return [angle for angle in angles if angle>0]
 
-# I'm not quite sure what this does
+
 def significant(rel,prec=500):
+    """I'm not quite sure what this does"""
     m = min(map(abs,rel))
     if (m+1).exact_log(2)>=sqrt(prec):
         return False
@@ -51,13 +54,15 @@ def significant(rel,prec=500):
             raise RuntimeError("Mixed significance")
         return True
 
-# Calls lindep function from PARI
+
 def sage_lindep(angles):
+    """Calls lindep function from PARI"""
     rel = gp.lindep(angles)
     return [ Integer(rel[i]) for i in range(1,len(angles)+1)]
 
-# Numerical computation of angle rank
+
 def compute_rank(numbers, prec=500):
+    """Numerical computation of angle rank"""
     r = len(numbers)
     if r == 1:
         return 1
@@ -74,11 +79,27 @@ def compute_rank(numbers, prec=500):
         else:
             return len(numbers)
 
-# Numerical calculation of the angle rank of a q-weil polynomial
-def num_angle_rank(mypoly, prec=500):
+
+def num_angle_rank(mypoly,prec=500):
+    """
+        We actually have enough functionality at this point to compute the entire group!
+        we added 1 to the span of the normalized angles then subtract 1 from the result
+    """
     angles = num_angles(mypoly, prec)
     angles = angles + [1]
+    #print angles
     return compute_rank(angles,prec)-1
+
+
+def moments(poly, N):
+    """Calculates sequence of the first 'N' normalized traces of Frobenius of the q-weil polynomial 'poly'"""
+    g = ZZ(poly.degree()/2)
+    q = ZZ((poly.coefficients()[0])**(1/g))
+    polyC = poly.base_extend(CC) 
+    q_weil_numbers = polyC.roots(ring = CC, multiplicities = False)
+    F = diagonal_matrix(q_weil_numbers)
+    return [CC((F^r).trace()/(2*g*sqrt(q)^r)) for r in range(1,N+1)]
+
 
 def is_easy_sn_an(f, num_trials = 50, assume_irreducible = False):
    """
