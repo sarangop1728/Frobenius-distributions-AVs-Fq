@@ -1,4 +1,5 @@
 import csv
+import os
 from sage.rings.polynomial.weil.weil_polynomials import WeilPolynomials
 
 # Global objects
@@ -208,19 +209,28 @@ def a0_to_csv(d,q,n):
     # trace sequence
     a0 = [trace_sequence(P.poly,10^n) for P in poly_list]
 
-    # write csv file
     file_name = 'a0_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.csv'
-    with open (file_name, 'w') as F:
+    new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
+    if not os.getcwd()[-9:] == "q-moments":
+        print("Oh you duffer, you should change to the correct directory or I have no idea where you are!!")
+    else:
+        if not os.path.exists(new_dir):
+            os.makedirs(new_dir)
+
+    path = new_dir + '/' + file_name
+
+    # write csv file
+    with open(path, 'w') as F:
         writer = csv.writer(F)
         for row in a0:
             writer.writerow(row)
 
 '''
-polys_to_csv(d,q,n) : creates a .csv file with the list of (d,q) Weil polynomials, sorted by angle rank.
+polys_to_txt(d,q,n) : creates a .txt file with the list of (d,q) Weil polynomials, sorted by angle rank.
 
 '''
 
-def polys_to_csv(d,q):
+def polys_to_txt(d,q):
     
     # create list of qPolyData
     poly_list = poly_data_list(d,q)
@@ -232,8 +242,18 @@ def polys_to_csv(d,q):
     string_poly = [str(P.poly) for P in poly_list]
 
     # write csv file
-    file_name = 'polys_' + str(d) + '_' + str(q) + '.csv'
-    with open (file_name, 'w') as F:
-        writer = csv.writer(F)
+    file_name = 'polys_' + str(d) + '_' + str(q) + '.txt'
+
+    new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
+    if not os.getcwd()[-9:] == "q-moments":
+        print("Oh you duffer, you should change to the correct directory or I have no idea where you are!!")
+    else:
+        if not os.path.exists(new_dir):
+            os.makedirs(new_dir)
+
+    path = new_dir + '/' + file_name
+    
+    with open(path, 'w') as F:
         for row in string_poly:
-            writer.writerow(row)
+            F.write(row)
+            F.write('\n')
