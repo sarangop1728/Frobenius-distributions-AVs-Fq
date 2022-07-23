@@ -3,8 +3,9 @@ import os
 from sage.rings.polynomial.weil.weil_polynomials import WeilPolynomials
 
 # Global objects
-prec = 20 # precision
+prec = 100 # precision
 CC = ComplexField(prec)
+RR = RealField(prec)
 R.<x> = PolynomialRing(QQ)
 
 '''
@@ -158,11 +159,12 @@ class qPoly_Data:
     def __init__(self, poly):
         """Initialise"""
         self.poly = poly
+        self.name = str(self.poly)
         # self.is_irreducible = poly.is_irreducible()
         self.galois_group = poly.splitting_field('z').galois_group()
         self.dimension = ZZ(poly.degree()/2)
         # self.code_size = []
-        # self.q =ZZ(CC((poly.coefficients()[0])^{1/self.dimension}))
+        self.q = ZZ(RR((self.poly).coefficients()[0])**(1/self.dimension))
         self.angle_rank = num_angle_rank(poly)
         # self.trace_poly = poly.trace_polynomial()[0]
         
@@ -183,12 +185,47 @@ Given a q-Weil polynomial (over QQ) 'poly' and a length 'N', moments(poly, n) ca
 """
 
 def trace_sequence(poly, N):
-    g = ZZ(poly.degree()/2)
-    q = ZZ((poly.coefficients()[0])**(1/g))
-    polyC = poly.base_extend(CC) 
+    g = poly.dimension
+    q = poly.q
+    polyC = poly.poly.base_extend(CC) 
     q_weil_numbers = polyC.roots(ring = CC, multiplicities = False)
     F = diagonal_matrix(q_weil_numbers)
     return [CC((F^r).trace()/(2*g*sqrt(q)^r)) for r in range(1,N+1)]
+
+'''
+Calculate k-moments
+'''
+
+def k_moments(k,poly, N=10000):
+    pol = poly.poly
+    g = poly.dimension
+    q = poly.q
+    polyC = pol.base_extend(CC) 
+    q_weil_numbers = polyC.roots(ring = CC, multiplicities = False)
+    F = diagonal_matrix(q_weil_numbers)
+    return sum([RR((F^r).trace()/(2*g*sqrt(q)^r))**k for r in range(1,N+1)])/N
+
+'''
+Moment sequence
+'''
+
+def moments(poly, N = 10):
+    return ["{:.3f}".format(k_moments(k, poly)) for k in range(N)]
+
+'''
+All moments
+'''
+
+def all_moments(d,q):
+    # create list of qPolyData
+    poly_list = poly_data_list(d,q)
+
+    # sort by angle rank
+    poly_list.sort(key = lambda x : x.angle_rank)
+
+    return [moments(P) for P in poly_list]
+    
+
 
  # sort class list by `attribute` 
  #   class_list.sort(key=lambda x: x.attribute, reverse=False)
@@ -216,7 +253,7 @@ def a0_to_csv(d,q,n):
     else:
         if not os.path.exists(new_dir):
             os.makedirs(new_dir)
-
+    
     path = new_dir + '/' + file_name
 
     # write csv file
