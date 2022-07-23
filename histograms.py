@@ -31,12 +31,13 @@ def read_poly_data(file_name):
 
 # buiild all a_0 histograms (10^n data points)  of all q-weil polys of degree d
 def all_histograms(d,q,n):
+    buckets = 2**(n-1)*10
     file_name = "./stats/d=" + str(d) + "/q=" + str(q) + '/a0_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.csv'
-    title = 'a_0 dist. for ' + str(q) + '-weil polynomials of degree ' + str(d) + ', 10^' + str(n) + ' data points.'
+    title = 'a0 dist. for ' + str(q) + '-weil polynomials of degree ' + str(d) + ', \n 10^' + str(n) + ' data points and ' + str(buckets) + ' buckets.'
     figure_name = 'a0_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.png'
     data = read_sequence_data(file_name)
     r = len(data)
-    bins = np.arange(-1,1,0.02)
+    bins = np.arange(-1,1,2/buckets)
     cols = 7
     rows = int(np.ceil(r/cols))
     fig, axs = plt.subplots(rows, cols, sharex = True, sharey = False, tight_layout = True)
@@ -45,6 +46,7 @@ def all_histograms(d,q,n):
         axs[int(np.floor(i/cols)), i%cols].hist(data[i], bins, density = True)
         axs[int(np.floor(i/cols)), i%cols].set_yticks([])
         plt.xticks([-1,0,1])
+        axs[int(np.floor(i/cols)), i%cols].set_ylim([0,1.6])
     path =  "./stats/d=" + str(d) + "/q=" + str(q) + '/' + figure_name
     plt.savefig(path, dpi=300)
 
@@ -62,7 +64,27 @@ def gif_all_histograms(d,q):
         images.append(file_name + '_10^' + str(n) + '.png')
         images.append(file_name + '_10^' + str(n) + '.png')
         images.append(file_name + '_10^' + str(n) + '.png')
+        images.append(file_name + '_10^' + str(n) + '.png')
+        images.append(file_name + '_10^' + str(n) + '.png')
+        images.append(file_name + '_10^' + str(n) + '.png')
+        images.append(file_name + '_10^' + str(n) + '.png')
+        images.append(file_name + '_10^' + str(n) + '.png')
+        images.append(file_name + '_10^' + str(n) + '.png')
+        images.append(file_name + '_10^' + str(n) + '.png')
         if (n == 5): # pause on the last frame
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
+            images.append(file_name + '_10^' + str(n) + '.png')
             images.append(file_name + '_10^' + str(n) + '.png')
             images.append(file_name + '_10^' + str(n) + '.png')
             images.append(file_name + '_10^' + str(n) + '.png')
