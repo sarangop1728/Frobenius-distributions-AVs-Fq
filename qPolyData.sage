@@ -1,234 +1,136 @@
-import csv
-import os
-from sage.rings.polynomial.weil.weil_polynomials import WeilPolynomials
+import csv # for exporting .csv files
+import os # file management
 
-# Global objects
-prec = 100 # precision
+
+# global objects
+prec = 100 
 CC = ComplexField(prec)
 RR = RealField(prec)
 R.<x> = PolynomialRing(QQ)
 
-'''
-Potentially usefull functions
-'''
+# load angle ranks functions
+load("angle_ranks.sage")
 
-def kill_repeats(mylist):
-    """This function takes a list and kills repeats. """
-    newlist=[]
-    for l in mylist:
-        if newlist.count(l)==0:
-            newlist.append(l)
-    return newlist
-
-
-def angle_rank(poly):
-    """This is the S-unit algorithm for calculating angle rank of a q-weil polynomial 'poly'"""
-    #p is the prime dividing q
-    p = radical(poly.coefficients()[0])
-    K.<a> = poly.splitting_field()
-    l = [p] + [i[0] for i in poly.roots(K)]
-    S = K.primes_above(p)
-    UGS = UnitGroup(K, S = tuple(S), proof=False)
-    ## Even with proof=False, it is guaranteed to obtain independent S-units; just maybe not the fully saturated group.
-    d = K.number_of_roots_of_unity()
-    gs = [K(i) for i in UGS.gens()]
-    l2 = [UGS(i^d).exponents() for i in l] #For x = a^1b^2c^3 exponents are (1,2,3)
-    for i in range(len(l)):
-        assert(l[i]^d == prod(gs[j]^l2[i][j] for j in range(len(l2[i]))))
-    M = Matrix(l2)
-    return M.rank()-1
-
-
-def num_angles(poly, prec=500):
-    """Numerical algorithm that calculates the Frobenius angles"""
-    myroots = poly.radical().roots(ComplexField(prec))
-    angles = [z[0].argument()/RealField(prec)(pi) for z in myroots]
-    return [angle for angle in angles if angle>0]
-
-
-def significant(rel,prec=500):
-    """I'm not quite sure what this does"""
-    m = min(map(abs,rel))
-    if (m+1).exact_log(2)>=sqrt(prec):
-        return False
-    else:
-        if (max(map(abs, rel))+1).exact_log(2) >= sqrt(prec):
-            raise RuntimeError("Mixed significance")
-        return True
-
-
-def sage_lindep(angles):
-    """Calls lindep function from PARI"""
-    rel = gp.lindep(angles)
-    return [ Integer(rel[i]) for i in range(1,len(angles)+1)]
-
-
-def compute_rank(numbers, prec=500):
-    """Numerical computation of angle rank"""
-    r = len(numbers)
-    if r == 1:
-        return 1
-    else:
-        rels = sage_lindep(numbers)
-        if significant(rels, prec):
-            i=0
-            while i<len(rels):
-                if rels[i] != 0:
-                    numbers.pop(i)
-                    return compute_rank(numbers, prec)
-                else:
-                    i+=1
-        else:
-            return len(numbers)
-
-
-def num_angle_rank(mypoly,prec=500):
-    """
-        We actually have enough functionality at this point to compute the entire group!
-        we added 1 to the span of the normalized angles then subtract 1 from the result
-    """
-    angles = num_angles(mypoly, prec)
-    angles = angles + [1]
-    #print angles
-    return compute_rank(angles,prec)-1
-
-
-def moments(poly, N):
-    """Calculates sequence of the first 'N' normalized traces of Frobenius of the q-weil polynomial 'poly'"""
-    g = ZZ(poly.degree()/2)
-    q = ZZ((poly.coefficients()[0])**(1/g))
-    polyC = poly.base_extend(CC) 
-    q_weil_numbers = polyC.roots(ring = CC, multiplicities = False)
-    F = diagonal_matrix(q_weil_numbers)
-    return [CC((F^r).trace()/(2*g*sqrt(q)^r)) for r in range(1,N+1)]
-
-
-def is_easy_sn_an(f, num_trials = 50, assume_irreducible = False):
-   """
-   Use the Davenport-Smith test to attempt to certify that `f` has Galois group A_n or S_n.
-   
-   Return 1 if the Galois group is certified as S_n, 2 if A_n, or 0 if no conclusion is reached.
-   """
-   if not assume_irreducible and not f.is_irreducible():
-      return 0
-   d = f.degree()
-   confirm_sn = False
-   for p in primes_first_n(num_trials):
-       fp = f.change_ring(GF(p))
-       l = fp.factor()
-       if (len(l)-d)%2 == 1:
-           confirm_sn = True
-       g = l[-1][0]
-       d1 = g.degree()
-       if (d1 <= 7 and (d,d1) in ((1,1),(2,1),(3,2),(3,3),(4,3),(5,3),(5,4),(6,5),(7,5))) or\
-           (d1 > d/2 and d1 < d-2 and d1.is_prime()):
-           return (2 if (not confirm_sn and f.disc().is_square()) else 1)
-   return 0
+#________________________________________________________________________
 
 '''
-This might be useful later:
-'''
-#for g in [2]:
-#  for q in [2,3]:
-#    R.<T> = ZZ[]
-#    L = R.weil_polynomials(2*g, q) # iterates over q-weil polynomials of degree 2*g
-#    it = iter(L)
-#    for f in it:
-#      bool = f.is_irreducible() 
-#      if bool:
-#       h = f.trace_polynomial()[0]
-#       G = magma.GaloisGroup(f)
-#       H = magma.GaloisGroup(h)
-#       sl=f.newton_slopes(radical(q))
-#       codeSize = magma.Order(G)/magma.Order(H)       
-#       bool2 = codeSize<2^g       
-#       labelG = magma.TransitiveGroupIdentification(G)
-#       labelH = magma.TransitiveGroupIdentification(H)        
-#       if True:
-#        r = num_angle_rank(f)
-#        print([g,q, magma.GroupName(G), r])
+qPolyClass: Python class with all the data associated to a Weil polynomial we can get.
 
+INPUT:  a q-Weil polynomial qpoly.
+
+OUTPUT: a Python class with the following list of attributes:
+
+    - poly:           the q-Weil polynomial in R.
+    - dimension:      integer g, the dimension of a corresponding abelian variety.
+    - q:              corresponding prime power.
+    - name:           string conversion of qpoly.
+    - is_irreducible: boolean, true if qpoly is irreducible.
+    - galois_group:   Galois group of the Galois closure of qpoly.
+    - angle_rank:     integer, angle rank of qpoly.
 
 '''
-The poly_data class
-'''
 
-class qPoly_Data:
-    """ A class which attaches data to a polynomial"""
-
-    def __init__(self, poly):
+class qPolyClass:
+    def __init__(self, qpoly):
         """Initialise"""
-        self.poly = poly
+        self.poly = qpoly
+        self.dim = self.poly.degree() // 2
+        self.q = ZZ(RR((self.poly).coefficients()[0])**(1/self.dim))
         self.name = str(self.poly)
-        # self.is_irreducible = poly.is_irreducible()
-        self.galois_group = poly.splitting_field('z').galois_group()
-        self.dimension = ZZ(poly.degree()/2)
+        self.is_irreducible = self.poly.is_irreducible()
+        # we call 'z' the generator of the Galois closure
+        self.galois_group = self.poly.splitting_field('z').galois_group()
+        self.angle_rank = num_angle_rank(self.poly)
+        self.trace_poly = self.poly.trace_polynomial()[0]
         # self.code_size = []
-        self.q = ZZ(RR((self.poly).coefficients()[0])**(1/self.dimension))
-        self.angle_rank = num_angle_rank(poly)
-        # self.trace_poly = poly.trace_polynomial()[0]
+        
         
     def __repr__(self):
         """Repr"""
-        return "q-weil data for the polynomial {p}".format(p = self.poly)
+        return "q-Weil data for the polynomial {p}".format(p = self.poly)
 
+#________________________________________________________________________
 
-# List with entries given by Poly_Data of q-Weil polynomaisl of degree d.
-def poly_data_list(d,q):
+'''
+qPolyClass_list: list of all qPolyClass data of dimension d
+
+INPUT: d = dimension, q = prime power.
+
+OUTPUT: list of all dimension d qPolyClass, sorted by angle rank.
+
+'''
+    
+def qPolyClass_list(d,q):
     l = R.weil_polynomials(d,q)
-    return [qPoly_Data(p) for p in l]
+    poly_list =  [qPolyClass(p) for p in l]
+    # sort by angle rank
+    poly_list.sort(key = lambda x : x.angle_rank)
+    return poly_list
 
+#________________________________________________________________________
 
-"""
-Given a q-Weil polynomial (over QQ) 'poly' and a length 'N', moments(poly, n) calculates the first N normalized traces of Frobenius sequence.
+'''
+a0_sequence: sequence of geometric normalized traces of Frobenius
 
-"""
+INPUT: qpolyClass, q-Weil poly class. N, the length of the sequence.
 
-def trace_sequence(poly, N):
-    g = poly.dimension
-    q = poly.q
-    polyC = poly.poly.base_extend(CC) 
+OUTPUT: list (x_1, x_2, x_3, ..., x_N) of normalized traces of Frobenius. N=10^4 by default.
+
+'''
+
+def a0_sequence(qpolyClass, N = 10^4):
+    g = qpolyClass.dim
+    q = qpolyClass.q
+    polyC = qpolyClass.poly.base_extend(CC) 
     q_weil_numbers = polyC.roots(ring = CC, multiplicities = False)
     F = diagonal_matrix(q_weil_numbers)
-    return [CC((F^r).trace()/(2*g*sqrt(q)^r)) for r in range(1,N+1)]
+    return [RR((F^r).trace()/(2*g*sqrt(q)^r)) for r in range(1,N+1)]
+
+#________________________________________________________________________
 
 '''
-Calculate k-moments
+k-moments: given a sequence (x_1, x_2, ..., x_N) calculates the average of
+           the sequence (x_1^k, x_2^k, ..., x_N^k).
+
+INPUT: sequence, a list with numerical entries. k, an integer.
+
+OUTPUT: the average of the k-power sequence, in  RR.
 '''
 
-def k_moments(k,poly, N=10000):
-    pol = poly.poly
-    g = poly.dimension
-    q = poly.q
-    polyC = pol.base_extend(CC) 
-    q_weil_numbers = polyC.roots(ring = CC, multiplicities = False)
-    F = diagonal_matrix(q_weil_numbers)
-    return sum([RR((F^r).trace()/(2*g*sqrt(q)^r))**k for r in range(1,N+1)])/N
+def k_moments(sequence, k):
+    k_pwr_sequence = [RR(s)^k for s in sequence]
+    return sum(k_pwr_sequence)/len(sequence)
+
+#________________________________________________________________________
 
 '''
-Moment sequence
+moments: calculates the first N moments of a sequence. 
+
+INPUT: sequence, a sequence with numerical values. N = number of moments to display (default is 10)
+
+OUTPUT: list with RR entries of length N. We display only 3 digits after the decimal point.
+
 '''
 
-def moments(poly, N = 10):
-    return ["{:.3f}".format(k_moments(k, poly)) for k in range(N)]
+def moments(sequence, N = 10):
+    return ["{:.3f}".format(k_moments(sequence,k)) for k in range(N)]
+
+#________________________________________________________________________
 
 '''
-All moments
+all_moments: list of moments for (d,q)-Weil polynomials.
+
+INPUT: d = dimension, q = prime power.
+
+OUTPUT: list of (the first 10) moments, for every (d,q)-Weil polynomial.
+
 '''
 
 def all_moments(d,q):
-    # create list of qPolyData
-    poly_list = poly_data_list(d,q)
-
-    # sort by angle rank
-    poly_list.sort(key = lambda x : x.angle_rank)
-
-    return [moments(P) for P in poly_list]
+    poly_list = qPolyClass_list(d,q)
+    return [moments(a0_sequence(P)) for P in poly_list]
     
-
-
- # sort class list by `attribute` 
- #   class_list.sort(key=lambda x: x.attribute, reverse=False)
+#________________________________________________________________________
 
 '''
  a0_to_csv(d,q,n) : creates a .csv file with the sequence a_0 (up to 10^n) for every polynomial in the list of (d,q) Weil polynomials, sorted by angle rank.
@@ -238,14 +140,12 @@ def all_moments(d,q):
 def a0_to_csv(d,q,n):
     
     # create list of qPolyData
-    poly_list = poly_data_list(d,q)
-
-    # sort by angle rank
-    poly_list.sort(key = lambda x : x.angle_rank)
+    poly_list = qPolyClass_list(d,q)
 
     # trace sequence
-    a0 = [trace_sequence(P.poly,10^n) for P in poly_list]
+    a0 = [a0_sequence(P,10^n) for P in poly_list]
 
+    # save file in correct directory
     file_name = 'a0_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.csv'
     new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
     if not os.getcwd()[-9:] == "q-moments":
@@ -253,7 +153,6 @@ def a0_to_csv(d,q,n):
     else:
         if not os.path.exists(new_dir):
             os.makedirs(new_dir)
-    
     path = new_dir + '/' + file_name
 
     # write csv file
@@ -262,23 +161,22 @@ def a0_to_csv(d,q,n):
         for row in a0:
             writer.writerow(row)
 
+#________________________________________________________________________
+
 '''
-polys_to_txt(d,q,n) : creates a .txt file with the list of (d,q) Weil polynomials, sorted by angle rank.
+polys_to_txt(d,q,n) : creates a .txt file with the list of (d,q)-Weil polynomials, sorted by angle rank.
 
 '''
 
 def polys_to_txt(d,q):
     
     # create list of qPolyData
-    poly_list = poly_data_list(d,q)
-
-    # sort by angle rank
-    poly_list.sort(key = lambda x : x.angle_rank)
+    poly_list = qPolyClass_list(d,q)
 
     # trace sequence
-    string_poly = [str(P.poly) for P in poly_list]
+    string_poly = [P.name for P in poly_list]
 
-    # write csv file
+    # write txt file
     file_name = 'polys_' + str(d) + '_' + str(q) + '.txt'
 
     new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
@@ -287,10 +185,37 @@ def polys_to_txt(d,q):
     else:
         if not os.path.exists(new_dir):
             os.makedirs(new_dir)
-
     path = new_dir + '/' + file_name
     
     with open(path, 'w') as F:
         for row in string_poly:
+            F.write(row)
+            F.write('\n')
+
+#________________________________________________________________________
+
+'''
+moments_to_txt(d,q,n) : creates a .txt file with the list of (d,q)-Weil moments, sorted by angle rank.
+
+'''
+
+def moments_to_txt(d,q):
+
+    # trace sequence
+    string_moments = [str(moments) for moments in all_moments(d,q)]
+
+    # write txt file
+    file_name = 'moments_' + str(d) + '_' + str(q) + '.txt'
+
+    new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
+    if not os.getcwd()[-9:] == "q-moments":
+        print("Oh you duffer, you should change to the correct directory or I have no idea where you are!!")
+    else:
+        if not os.path.exists(new_dir):
+            os.makedirs(new_dir)
+    path = new_dir + '/' + file_name
+    
+    with open(path, 'w') as F:
+        for row in string_moments:
             F.write(row)
             F.write('\n')
