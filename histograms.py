@@ -119,6 +119,7 @@ def histogram(polyname,n):
     ax.set_xlabel('moments: ' + moments, fontsize=10)
     path =  "./stats/d=" + str(d) + "/q=" + str(q) + '/' + figure_name
     plt.savefig(path, dpi=300)
+    plt.close('all')
 
 #_____________________________________________________________
 def d_q_histograms(d,q,n):
