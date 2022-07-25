@@ -17,7 +17,7 @@ read_sequence_data
 
 def read_sequence_data(d,q,n):
     data = []
-    file_name = "./stats/d=" + d + "/q=" + str(q) + '/a0_' + d + '_' + str(q) + '_10^' + str(n) + '.csv'
+    file_name = "./stats/d=" + str(d) + "/q=" + str(q) + '/a0_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.csv'
     with open(file_name, 'r') as F:
         reader = csv.reader(F, quoting=csv.QUOTE_NONNUMERIC)
         for line in reader:
@@ -145,43 +145,11 @@ def gif_all_histograms(d,q):
     images = []
     file_name =  "./stats/d=" + str(d) + "/q=" + str(q) + '/a0_' + str(d) + '_' + str(q) 
     for n in [2,3,4,5]:
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
-        images.append(file_name + '_10^' + str(n) + '.png')
+        for i in range(10): #repeat same image 10 times
+            images.append(file_name + '_10^' + str(n) + '.png')
         if (n == 5): # pause on the last frame
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
-            images.append(file_name + '_10^' + str(n) + '.png')
+            for i in range(20): #repeat same image 20 times
+                images.append(file_name + '_10^' + str(n) + '.png')
 
     # build gif
     gif_name = file_name + '.gif'
@@ -189,3 +157,74 @@ def gif_all_histograms(d,q):
         for filename in images:
             image = imageio.imread(filename)
             writer.append_data(image)
+
+#_____________________________________________________________
+
+'''
+gif_histogram: .gif for one (d,q)-a0 histogram
+
+'''
+def gif_histogram(polyname):
+    
+    # build list with images to cicle through
+    images = []
+
+    # get d and q
+    d = polyname[2] # the third letter is always the degree
+    q = str(int(float(polyname[-1])**(2/float(d)))) # the last letter is always the prime power
+
+    
+    # remove the '*' from name and delete spaces
+    polyname = polyname.replace('*','')
+    polyname = polyname.replace(' ','')
+    
+    file_name =  "./stats/d=" + d + "/q=" + q + '/a0_' + polyname
+    for n in [2,3,4,5]: 
+        for i in range(10): #repeat same image 10 times
+            images.append(file_name + '_10^' + str(n) + '.png')
+
+        if (n == 5): # pause on the last frame
+            for i in range(20): #repeat same image 20 times
+                images.append(file_name + '_10^' + str(n) + '.png')
+
+    # build gif
+    gif_name = file_name + '.gif'
+    with imageio.get_writer(gif_name, mode='I') as writer:
+        for filename in images:
+            image = imageio.imread(filename)
+            writer.append_data(image)
+
+#_____________________________________________________________
+
+'''
+gif_all_single_histograms:
+
+'''
+def gif_all_single_histograms(d,q):
+    # read poly data
+    polydata = read_poly_data(d,q)
+    # loop over all files and delete them
+    for polyname in polydata:
+        gif_histogram(polyname)
+    
+
+#_____________________________________________________________
+# DELETE GARBAGE HISTOGRAMS (n=2,3,4)
+#_____________________________________________________________
+
+def delete_histograms(d,q,n):
+    # read poly data
+    polydata = read_poly_data(d,q)
+    # loop over all files and delete them
+    for polyname in polydata:
+        # remove the '*' from name and delete spaces
+        polyname = polyname.replace('*','')
+        polyname = polyname.replace(' ','')
+        directory =  "./stats/d=" + str(d) + "/q=" + str(q) + '/'
+        file_name = 'a0_' + polyname + '_10^' + str(n) + '.png'
+        if os.path.exists(directory + file_name):
+            os.remove(directory + file_name)
+        else:
+            print("The file " + file_name + " does not exist!")
+        
+
