@@ -54,15 +54,20 @@ class qPolyClass:
 '''
 qPolyClass_list: list of all qPolyClass data of dimension d
 
-INPUT: d = dimension, q = prime power.
+INPUT: d = dimension, q = prime power, w_e_a_r = boolean: True if we want to include ar 0 and g.
 
 OUTPUT: list of all dimension d qPolyClass, sorted by angle rank.
 
 '''
     
-def qPolyClass_list(d,q):
+def qPolyClass_list(d,q, with_extremal_angle_ranks = False):
     l = R.weil_polynomials(d,q)
     poly_list =  [qPolyClass(p) for p in l]
+
+    # filter out the extremal angle ranks
+    if not with_extremal_angle_ranks:
+        poly_list = list(filter(lambda x : x.angle_rank != 0 and x.angle_rank != x.dim, poly_list))
+        
     # sort by angle rank
     poly_list.sort(key = lambda x : x.angle_rank)
     return poly_list
@@ -126,8 +131,8 @@ OUTPUT: list of (the first 10) moments, for every (d,q)-Weil polynomial.
 
 '''
 
-def all_moments(d,q):
-    poly_list = qPolyClass_list(d,q)
+def all_moments(d,q,extremal=False):
+    poly_list = qPolyClass_list(d,q,extremal)
     return [moments(a0_sequence(P)) for P in poly_list]
     
 #________________________________________________________________________
@@ -137,10 +142,10 @@ def all_moments(d,q):
 
 '''
 
-def a0_to_csv(d,q,n):
+def a0_to_csv(d,q,n,extremal=False):
     
     # create list of qPolyData
-    poly_list = qPolyClass_list(d,q)
+    poly_list = qPolyClass_list(d,q,extremal)
 
     # trace sequence
     a0 = [a0_sequence(P,10^n) for P in poly_list]
@@ -168,10 +173,10 @@ polys_to_txt(d,q,n) : creates a .txt file with the list of (d,q)-Weil polynomial
 
 '''
 
-def polys_to_txt(d,q):
+def polys_to_txt(d,q,extremal=False):
     
     # create list of qPolyData
-    poly_list = qPolyClass_list(d,q)
+    poly_list = qPolyClass_list(d,q,extremal)
 
     # trace sequence
     string_poly = [P.name for P in poly_list]
@@ -195,14 +200,45 @@ def polys_to_txt(d,q):
 #________________________________________________________________________
 
 '''
+anglerank_to_txt(d,q,n) : creates a .txt file with the list of (d,q)-Weil polynomials, sorted by angle rank.
+
+'''
+
+def angle_rank_to_txt(d,q,extremal=False):
+    
+    # create list of qPolyData
+    poly_list = qPolyClass_list(d,q,extremal)
+
+    # trace sequence
+    string_poly = [str(P.angle_rank) for P in poly_list]
+
+    # write txt file
+    file_name = 'angle_ranks_' + str(d) + '_' + str(q) + '.txt'
+
+    new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
+    if not os.getcwd()[-9:] == "q-moments":
+        print("Oh you duffer, you should change to the correct directory or I have no idea where you are!!")
+    else:
+        if not os.path.exists(new_dir):
+            os.makedirs(new_dir)
+    path = new_dir + '/' + file_name
+    
+    with open(path, 'w') as F:
+        for row in string_poly:
+            F.write(row)
+            F.write('\n')
+
+#________________________________________________________________________
+
+'''
 moments_to_txt(d,q,n) : creates a .txt file with the list of (d,q)-Weil moments, sorted by angle rank.
 
 '''
 
-def moments_to_txt(d,q):
+def moments_to_txt(d,q,extremal=False):
 
     # trace sequence
-    string_moments = [str(moments) for moments in all_moments(d,q)]
+    string_moments = [str(moments) for moments in all_moments(d,q,extremal)]
 
     # write txt file
     file_name = 'moments_' + str(d) + '_' + str(q) + '.txt'
