@@ -33,6 +33,14 @@ def read_poly_data(d,q):
 
 #_____________________________________________________________
 
+def read_angle_ranks_data(d,q):
+    file_name = './stats/d=' +str(d) + '/q=' + str(q) + '/angle_ranks_' +str(d) +'_' + str(q) + '.txt'
+    with open(file_name) as F:
+        data = F.read().splitlines()
+    return data
+
+#_____________________________________________________________
+
 def read_moments_data(d,q):
     file_name = './stats/d=' +str(d) + '/q=' + str(q) + '/moments_' +str(d) +'_' + str(q) + '.txt'
     with open(file_name) as F:
@@ -56,7 +64,7 @@ def all_histograms(d,q,n):
     data = read_sequence_data(d,q,n)
     r = len(data)
     bins = np.arange(-1,1,2/buckets)
-    cols = 7
+    cols = 10
     rows = int(np.ceil(r/cols))
     fig, axs = plt.subplots(rows, cols, sharex = True, sharey = False, tight_layout = True)
     fig.suptitle(title)
@@ -98,19 +106,22 @@ def histogram(polyname,n):
     sequence = read_sequence_data(d,q,n)[index]
     moments = read_moments_data(d,q)[index]
     moments = moments.replace("'",'')
+
+    # angle rank data
+    angle_rank = read_angle_ranks_data(d,q)[index]
     
     # remove the '*' from name
     polyname = polyname.replace('*','')
 
     title = 'a0 dist. for ' + polyname
-    subtitle = ' 10^' + str(n) + ' data points and ' + str(buckets) + ' buckets.'
+    subtitle =  'angle rank = ' + angle_rank + ' ( 10^' + str(n) + ' data points and ' + str(buckets) + ' buckets )'
     figure_name = 'a0_' + polyname.replace(' ','') + '_10^' + str(n) + '.png'
     
     
     bins = np.arange(-1,1,2/buckets)
     fig , ax = plt.subplots()
-    fig.suptitle(title, fontsize=15)
-    ax.set_title(subtitle, fontsize=10)
+    fig.suptitle(title, fontsize=11)
+    ax.set_title(subtitle, fontsize=9)
     ax.hist(sequence, bins, density = True)
     ax.set_yticks([])
     ax.set_xticks([-1,0,1])
