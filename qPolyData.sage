@@ -1,17 +1,77 @@
-import csv # for exporting .csv files
-import os # file management
+import csv 
+import os
 
 
-# global objects
-prec = 100 
+# Global objects.
+
+prec = 1000
 CC = ComplexField(prec)
 RR = RealField(prec)
 R.<x> = PolynomialRing(QQ)
 
-# load angle ranks functions
-load("angle_ranks.sage")
+import csv
+import os
 
-#________________________________________________________________________
+# Load angle ranks functions.
+load('angle_ranks.sage')
+
+
+# LMFDB labels.
+# ______________________________________________________________________________
+
+# Writting numbers in base 26
+a_lowercase = ord('a') # Gives the unicode number of the character.
+alphabet_size = 26
+
+def _decompose(number):
+    '''Returns a generator object with the digits from `number` in base alphabet'''
+
+    while number:
+        number, remainder = divmod(number, alphabet_size)
+        yield remainder
+
+def base_10_to_alphabet(number):
+    '''Converts base 10 integer to its base alphabet representation. If <= 0; the word starts with an 'a'.'''
+
+    if number <= 0:
+        word = 'a'
+        number = -number
+    else:
+        word = ''
+
+    return word + ''.join(
+            chr(a_lowercase + part)
+            for part in _decompose(number)
+    )[::-1] # string[::-1] reverses the string.
+
+def base_alphabet_to_10(letters):
+    '''Convert an alphabet number (string) to its decimal representation'''
+
+    return sum(
+            (ord(letter) - a_lowercase)*alphabet_size**i
+            for i, letter in enumerate(reversed(letters))
+    )
+
+# q-Weil polynomial to LMFDB label.
+
+''''
+    Recall that the label format is g.q.iso, where
+    g : the dimension of the AV contained in the isogeny class
+    q : the cardinality of the base field
+    iso : the integer coefficients a_1,...,a_g of the L-polynomial polynomial in base 26 in the symbols a,b,c,...,z with a=0 and separated by underscores
+'''
+
+def lmfdb_label(poly, q):
+
+    g = poly.degree()//2 # Dimension.
+    coefficients = poly.coefficients(sparse=False)[2*g-1:g-1:-1] # [a_1,...,a_g].
+    iso = '_'.join(base_10_to_alphabet(Integer(coeff)) for coeff in coefficients)
+
+    return str(g) + '.' + str(q) + '.' + iso
+
+
+# qPolyClass
+# ______________________________________________________________________________
 
 '''
 qPolyClass: Python class with all the data associated to a Weil polynomial we can get.
@@ -20,238 +80,184 @@ INPUT:  a q-Weil polynomial qpoly.
 
 OUTPUT: a Python class with the following list of attributes:
 
-    - poly:           the q-Weil polynomial in R.
-    - dimension:      integer g, the dimension of a corresponding abelian variety.
-    - q:              corresponding prime power.
-    - name:           string conversion of qpoly.
-    - is_irreducible: boolean, true if qpoly is irreducible.
-    - galois_group:   Galois group of the Galois closure of qpoly.
-    - angle_rank:     integer, angle rank of qpoly.
-
+- poly: the q-Weil polynomial in \mathbf{Q}[x].
+- dimension: integer g, the dimension of an abelian variety in the corresponding isogeny class.
+- q: corresponding prime power.
+- name: string conversion of qpoly.
+- is_irreducible: boolean, true ifqpolyis irreducible.
+- galois_group: Galois group of the Galois closure of qpoly.
+- roots: complex roots of the Weil polynomial.
+- angle_rank: integer, angle rank of qpoly.
+- label: LMFDB label.
 '''
 
 class qPolyClass:
     def __init__(self, qpoly):
-        """Initialise"""
+        '''Initialise'''
+
         self.poly = qpoly
         self.dim = self.poly.degree() // 2
         self.q = ZZ(RR((self.poly).coefficients()[0])**(1/self.dim))
         self.name = str(self.poly)
         self.is_irreducible = self.poly.is_irreducible()
-        # we call 'z' the generator of the Galois closure
-        self.galois_group = self.poly.splitting_field('z').galois_group()
+        self.galois_group = self.poly.splitting_field('z').galois_group() # 'z' the generator of the Galois closure.
+        self.roots = self.poly.base_extend(CC).roots(ring = CC, multiplicities = False)
         self.angle_rank = num_angle_rank(self.poly)
         self.trace_poly = self.poly.trace_polynomial()[0]
-        # self.code_size = []
-        
-        
+        self.label = lmfdb_label(self.poly, self.q)
+
     def __repr__(self):
-        """Repr"""
-        return "q-Weil data for the polynomial {p}".format(p = self.poly)
+        '''Repr'''
+        return 'q-Weil data for {p}'.format(p = self.label)
 
-#________________________________________________________________________
-
-'''
-qPolyClass_list: list of all qPolyClass data of dimension d
-
-INPUT: d = dimension, q = prime power, w_e_a_r = boolean: True if we want to include ar 0 and g.
-
-OUTPUT: list of all dimension d qPolyClass, sorted by angle rank.
-
-'''
     
-def qPolyClass_list(d,q, with_extremal_angle_ranks = False):
-    l = R.weil_polynomials(d,q)
-    poly_list =  [qPolyClass(p) for p in l]
+def poly_class_list(d,q, with_extremal_angle_ranks = True):
+    '''list of all qPolyClass data of dimension d and prime power q.'''
+    
+    poly_list =  [qPolyClass(p) for p in R.weil_polynomials(d,q)]
 
-    # filter out the extremal angle ranks
+    # Filter out the extremal angle ranks.
     if not with_extremal_angle_ranks:
         poly_list = list(filter(lambda x : x.angle_rank != 0 and x.angle_rank != x.dim, poly_list))
-        
-    # sort by angle rank
-    poly_list.sort(key = lambda x : x.angle_rank)
+
+    poly_list.sort(key = lambda x : x.angle_rank) # Sort by angle rank.
+
     return poly_list
 
-#________________________________________________________________________
 
-'''
-a0_sequence: sequence of geometric normalized traces of Frobenius
+# a1 sequence & moments
+# ______________________________________________________________________________
 
-INPUT: qpolyClass, q-Weil poly class. N, the length of the sequence.
+def a1_sequence(qpolyClass, N = 10^6):
+    '''Generator sequence of normalized traces of frobenius. Default length = 10^6.'''
 
-OUTPUT: list (x_1, x_2, x_3, ..., x_N) of normalized traces of Frobenius. N=10^4 by default.
-
-'''
-
-def a0_sequence(qpolyClass, N = 10^4):
     g = qpolyClass.dim
     q = qpolyClass.q
-    polyC = qpolyClass.poly.base_extend(CC) 
-    q_weil_numbers = polyC.roots(ring = CC, multiplicities = False)
+    label = qpolyClass.label
+    q_weil_numbers = qpolyClass.roots
     F = diagonal_matrix(q_weil_numbers)
-    return [RR((F^r).trace()/(2*g*sqrt(q)^r)) for r in range(1,N+1)]
 
-#________________________________________________________________________
+    return (RR((F^r).trace()/(g*sqrt(q)^r)) for r in range(1,N+1))
 
-'''
-k-moments: given a sequence (x_1, x_2, ..., x_N) calculates the average of
-           the sequence (x_1^k, x_2^k, ..., x_N^k).
+def moments(sequence, N=10):
+    '''Returns the first N k-moments of the sequence, N=10 by default.'''
 
-INPUT: sequence, a list with numerical entries. k, an integer.
-
-OUTPUT: the average of the k-power sequence, in  RR.
-'''
-
-def k_moments(sequence, k):
-    k_pwr_sequence = [RR(s)^k for s in sequence]
-    return sum(k_pwr_sequence)/len(sequence)
-
-#________________________________________________________________________
-
-'''
-moments: calculates the first N moments of a sequence. 
-
-INPUT: sequence, a sequence with numerical values. N = number of moments to display (default is 10)
-
-OUTPUT: list with RR entries of length N. We display only 3 digits after the decimal point.
-
-'''
-
-def moments(sequence, N = 10):
-    return ["{:.3f}".format(k_moments(sequence,k)) for k in range(N)]
-
-#________________________________________________________________________
-
-'''
-all_moments: list of moments for (d,q)-Weil polynomials.
-
-INPUT: d = dimension, q = prime power.
-
-OUTPUT: list of (the first 10) moments, for every (d,q)-Weil polynomial.
-
-'''
-
-def all_moments(d,q,extremal=False):
-    poly_list = qPolyClass_list(d,q,extremal)
-    return [moments(a0_sequence(P)) for P in poly_list]
+    seq_list = list(sequence)
+    moments = []
+    if len(seq_list) > 0:
+        for k in range(N):
+            k_pwr_sequence = [s^k for s in seq_list]
+            approx = round((sum(k_pwr_sequence)/len(seq_list)),3)
+            if abs(approx) < 0.001:
+                approx = round(0.0,1)
+            moments.append(approx)
+    return moments
     
-#________________________________________________________________________
 
-'''
- a0_to_csv(d,q,n) : creates a .csv file with the sequence a_0 (up to 10^n) for every polynomial in the list of (d,q) Weil polynomials, sorted by angle rank.
+# Exporting data.
+# ______________________________________________________________________________
 
-'''
+def a1_to_csv(d,q,n,extremal=True):
 
-def a0_to_csv(d,q,n,extremal=False):
-    
-    # create list of qPolyData
-    poly_list = qPolyClass_list(d,q,extremal)
+    # Create list of qPolyData.
+    poly_list = poly_class_list(d,q,extremal)
 
-    # trace sequence
-    a0 = [a0_sequence(P,10^n) for P in poly_list]
+    # Dictionary of a_1 sequences with lmfdb label as keys.
+    a1_dict = {P.label : list(a1_sequence(P,10^n)) for P in poly_list}
 
-    # save file in correct directory
-    file_name = 'a0_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.csv'
-    new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
-    if not os.getcwd()[-9:] == "q-moments":
-        print("Oh you duffer, you should change to the correct directory or I have no idea where you are!!")
-    else:
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
-    path = new_dir + '/' + file_name
+    # Header.
+    fieldnames = ['Label', 'a_1']
 
-    # write csv file
-    with open(path, 'w') as F:
-        writer = csv.writer(F)
-        for row in a0:
-            writer.writerow(row)
+    # Filename
+    file_name = 'a1_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.csv'
 
-#________________________________________________________________________
-
-'''
-polys_to_txt(d,q,n) : creates a .txt file with the list of (d,q)-Weil polynomials, sorted by angle rank.
-
-'''
-
-def polys_to_txt(d,q,extremal=False):
-    
-    # create list of qPolyData
-    poly_list = qPolyClass_list(d,q,extremal)
-
-    # trace sequence
-    string_poly = [P.name for P in poly_list]
-
-    # write txt file
-    file_name = 'polys_' + str(d) + '_' + str(q) + '.txt'
-
-    new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
-    if not os.getcwd()[-9:] == "q-moments":
-        print("Oh you duffer, you should change to the correct directory or I have no idea where you are!!")
+    # Directory
+    new_dir = './stats/d=' + str(d) + '/q=' + str(q) 
+    if not os.getcwd()[-9:] == 'q-moments':
+        print('Make sure you are in the q-moments directory!')
     else:
         if not os.path.exists(new_dir):
             os.makedirs(new_dir)
     path = new_dir + '/' + file_name
     
+    # Write csv file.
+    with open(path, 'w') as csvfile:
+
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+
+        for label in a1_dict.keys():
+            writer.writerow({'Label' : label, 'a_1': a1_dict[label]})
+
+
+def moments_to_csv(d,q,extremal=True):
+
+    # Create list of qPolyData.
+    poly_list = poly_class_list(d,q,extremal)
+
+    # Dictionary of trace sequences.
+    moments_dict = {P.label : moments(a1_sequence(P,10^5)) for P in poly_list}
+
+    # Header.
+    fieldnames = ['Label', 'a_1 moments']
+
+    # Filename.
+    file_name = str(d) + '_' + str(q) + '_moments.csv'
+
+    # Directory.
+    new_dir = './stats/d=' + str(d) + '/q=' + str(q) 
+    if not os.getcwd()[-9:] == 'q-moments':
+        print('Make sure you are in the q-moments directory!')
+    else:
+        if not os.path.exists(new_dir):
+            os.makedirs(new_dir)
+    path = new_dir + '/' + file_name
+
+    # Write csv file.
+    with open(path, 'w') as csvfile:
+
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+
+        for label in moments_dict.keys():
+            writer.writerow({'Label' : label, 'a_1 moments': moments_dict[label]})
+
+def labels_to_txt(d,q,extremal=True):
+
+    # Create list of qPolyData.
+    poly_list = poly_class_list(d,q,extremal)
+
+    # List of trace sequences.
+    labels = [P.label for P in poly_list]
+
+    # Filename.
+    file_name = str(d) + '_' + str(q) + '_labels.txt'
+
+    # Directory.
+    new_dir = './stats/d=' + str(d) + '/q=' + str(q) 
+    if not os.getcwd()[-9:] == 'q-moments':
+        print('Make sure you are in the q-moments directory!')
+    else:
+        if not os.path.exists(new_dir):
+            os.makedirs(new_dir)
+    path = new_dir + '/' + file_name
+
+    # Writting the file.
     with open(path, 'w') as F:
-        for row in string_poly:
+        for row in labels:
             F.write(row)
             F.write('\n')
 
-#________________________________________________________________________
 
-'''
-anglerank_to_txt(d,q,n) : creates a .txt file with the list of (d,q)-Weil polynomials, sorted by angle rank.
+# Generate files.
+# ______________________________________________________________________________
 
-'''
+q = 2
+d = 4
 
-def angle_rank_to_txt(d,q,extremal=False):
-    
-    # create list of qPolyData
-    poly_list = qPolyClass_list(d,q,extremal)
+labels_to_txt(d,q)
 
-    # trace sequence
-    string_poly = [str(P.angle_rank) for P in poly_list]
-
-    # write txt file
-    file_name = 'angle_ranks_' + str(d) + '_' + str(q) + '.txt'
-
-    new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
-    if not os.getcwd()[-9:] == "q-moments":
-        print("Oh you duffer, you should change to the correct directory or I have no idea where you are!!")
-    else:
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
-    path = new_dir + '/' + file_name
-    
-    with open(path, 'w') as F:
-        for row in string_poly:
-            F.write(row)
-            F.write('\n')
-
-#________________________________________________________________________
-
-'''
-moments_to_txt(d,q,n) : creates a .txt file with the list of (d,q)-Weil moments, sorted by angle rank.
-
-'''
-
-def moments_to_txt(d,q,extremal=False):
-
-    # trace sequence
-    string_moments = [str(moments) for moments in all_moments(d,q,extremal)]
-
-    # write txt file
-    file_name = 'moments_' + str(d) + '_' + str(q) + '.txt'
-
-    new_dir = "./stats/d=" + str(d) + "/q=" + str(q) 
-    if not os.getcwd()[-9:] == "q-moments":
-        print("Oh you duffer, you should change to the correct directory or I have no idea where you are!!")
-    else:
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
-    path = new_dir + '/' + file_name
-    
-    with open(path, 'w') as F:
-        for row in string_moments:
-            F.write(row)
-            F.write('\n')
+for n in [2,3,4,5]:
+    a1_to_csv(d,q,n)

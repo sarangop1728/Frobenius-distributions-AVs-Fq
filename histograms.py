@@ -3,239 +3,178 @@ import numpy as np
 import csv
 import os
 import imageio
+import sys
 
+csv.field_size_limit(sys.maxsize) # csv files contain very large fields. 
 
-#_____________________________________________________________
-# read data
-#_____________________________________________________________
-
-
-'''
-read_sequence_data
-
-'''
+# Read data.
+# ______________________________________________________________________________
 
 def read_sequence_data(d,q,n):
-    data = []
-    file_name = "./stats/d=" + str(d) + "/q=" + str(q) + '/a0_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.csv'
+    '''Reads file: a1_d_q_10^n.csv '''
+    
+    data = {}
+    
+    file_name = './stats/d=' +str(d) + '/q=' + str(q) + '/a1_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.csv'
+
     with open(file_name, 'r') as F:
-        reader = csv.reader(F, quoting=csv.QUOTE_NONNUMERIC)
+
+        reader = csv.DictReader(F)
+
         for line in reader:
-            data.append(line)
-    return data
-#_____________________________________________________________
 
-def read_poly_data(d,q):
-    file_name = './stats/d=' +str(d) + '/q=' + str(q) + '/polys_' +str(d) +'_' + str(q) + '.txt'
+            temp_string = line['a_1'].lstrip('[').rstrip(']') # Removes [ and ].
+            temp_list = temp_string.split(',') # Create list of x_i's as strings.
+            a_1 = list(map(float, temp_list)) # Coerce the x_i from strings to floats.
+            data[line['Label']] = a_1
+
+    return data
+
+
+def read_labels(d,q):
+    
+    file_name = './stats/d=' +str(d) + '/q=' + str(q) + '/' +str(d) +'_' + str(q) + '_labels.txt'
+
     with open(file_name) as F:
+
         data = F.read().splitlines()
-    return data
-
-#_____________________________________________________________
-
-def read_angle_ranks_data(d,q):
-    file_name = './stats/d=' +str(d) + '/q=' + str(q) + '/angle_ranks_' +str(d) +'_' + str(q) + '.txt'
-    with open(file_name) as F:
-        data = F.read().splitlines()
-    return data
-
-#_____________________________________________________________
-
-def read_moments_data(d,q):
-    file_name = './stats/d=' +str(d) + '/q=' + str(q) + '/moments_' +str(d) +'_' + str(q) + '.txt'
-    with open(file_name) as F:
-        data = F.read().splitlines()
-    return data
         
-#_____________________________________________________________
-# HISTOGRAMS
-#_____________________________________________________________
+    return data
 
-'''
-all_histograms: gif for all (d,q)-a0 histograms
+# Moments.
+# ______________________________________________________________________________
 
-*** looks bad when there are too many polynomials.
+def k_moment(sequence, k):
 
-'''
-def all_histograms(d,q,n):
-    buckets = 2**(n-1)*10
-    title = 'a0 dist. for ' + str(q) + '-weil polynomials of degree ' + str(d) + ', \n 10^' + str(n) + ' data points and ' + str(buckets) + ' buckets.'
-    figure_name = 'a0_' + str(d) + '_' + str(q) + '_10^' + str(n) + '.png'
-    data = read_sequence_data(d,q,n)
-    r = len(data)
-    bins = np.arange(-1,1,2/buckets)
-    cols = 10
-    rows = int(np.ceil(r/cols))
-    fig, axs = plt.subplots(rows, cols, sharex = True, sharey = False, tight_layout = True)
-    fig.suptitle(title)
-    for i in range(r):
-        axs[int(np.floor(i/cols)), i%cols].hist(data[i], bins, density = True)
-        axs[int(np.floor(i/cols)), i%cols].set_yticks([])
-        plt.xticks([-1,0,1])
-        axs[int(np.floor(i/cols)), i%cols].set_ylim([0,1.6])
-    path =  "./stats/d=" + str(d) + "/q=" + str(q) + '/' + figure_name
-    plt.savefig(path, dpi=300)
+    l = len(sequence)
 
+    if l > 0:
+        return round(sum(s**k for s in sequence)/l,3)
+    else:
+        return -10^10
 
-#_____________________________________________________________
-'''
-histogram: histogram for a given (d,q)-Weil polynomial
+def moments(d,q,N=5,M=10):
 
-INPUT: i, index in the list of all (d,q)-Weil polynomials. n, corresponding to 10^n data points.
+    a1 = read_sequence_data(4,2,N)
 
-OUTPUT:
+    values = {}
 
-REQUIRES: files 
-'''
-# 'x^4 + 4*x^3 + 8*x^2 + 8*x + 4'
-# './stats/d=4/q=2/a0_4_2_10^2.csv'
-def histogram(polyname,n):
+    for label in a1.keys():
+        values[label] = [k_moment(a1[label], k) for k in range(M)]
 
-    # get d and q
-    d = polyname[2] # the third letter is always the degree
-    q = str(int(float(polyname[-1])**(2/float(d)))) # the last letter is always the prime power
-    
-    # number of buckets
-    buckets = 2**(n-1)*10
+    return {key : value for key,value in values.items()}    
 
-    # get index
-    polydata = read_poly_data(d,q)
-    index = polydata.index(polyname)
+# Histograms.
+# ______________________________________________________________________________
 
-    # a0 sequence and moments
-    sequence = read_sequence_data(d,q,n)[index]
-    moments = read_moments_data(d,q)[index]
-    moments = moments.replace("'",'')
+# '2.2.a_c'
 
-    # angle rank data
-    angle_rank = read_angle_ranks_data(d,q)[index]
-    
-    # remove the '*' from name
-    polyname = polyname.replace('*','')
+def histogram(label,n):
 
-    title = 'a0 dist. for ' + polyname
-    subtitle =  'angle rank = ' + angle_rank + ' ( 10^' + str(n) + ' data points and ' + str(buckets) + ' buckets )'
-    figure_name = 'a0_' + polyname.replace(' ','') + '_10^' + str(n) + '.png'
-    
-    
+    # Read d and q.
+    d = 2*int(label[0])
+    q = int(label[2])
+
+    # Number of buckets.
+    buckets = (2**(n-1))*10
+
+    # Read data
+    sequence = read_sequence_data(d,q,n)
+    moment_data = moments(d,q)
+
+    # Plot
+    title = 'a1 distribution for ' + label
+    subtitle = '( 10^' + str(n) + ' data points and ' + str(buckets) + ' buckets )'
+    figure_name = 'a1_' + label + '_10^' + str(n) + '.png'
     bins = np.arange(-1,1,2/buckets)
     fig , ax = plt.subplots()
     fig.suptitle(title, fontsize=11)
     ax.set_title(subtitle, fontsize=9)
-    ax.hist(sequence, bins, density = True)
+    ax.hist(sequence[label], bins, density = True)
     ax.set_yticks([])
-    ax.set_xticks([-1,0,1])
+    ax.set_xticks([-2,0,2])
     ax.set_ylim([0,1.6])
-    ax.set_xlim([-1.1,1.1])
-    ax.set_xlabel('moments: ' + moments, fontsize=10)
-    path =  "./stats/d=" + str(d) + "/q=" + str(q) + '/' + figure_name
+    ax.set_xlim([-2.1,2.1])
+    ax.set_xlabel('moments: ' + str(moment_data[label]), fontsize=10)
+    path =  './stats/d=' + str(d) + '/q=' + str(q) + '/' + figure_name
     plt.savefig(path, dpi=300)
     plt.close('all')
 
-#_____________________________________________________________
+
 def d_q_histograms(d,q,n):
-    polydata = read_poly_data(d,q)
-    for polyname in polydata:
-        histogram(polyname,n)
-
-
-
-#_____________________________________________________________
-# GIFs
-#_____________________________________________________________
-
-'''
-gif_all_histograms: gif for all (d,q)-a0 histograms
-
-*** looks bad when there are too many polynomials.
-
-'''
-def gif_all_histograms(d,q):
+    '''Generates all (d,q)-histograms for a1-sequences of length 10^n.'''
     
-    # build list with images to cicle through
+    labels = read_labels(d,q)
+
+    for label in labels:
+        histogram(label,n)
+
+
+# GIFs (n=2,3,4,5)
+# ______________________________________________________________________________
+
+def gif_histogram(label):
+
+    # Build list with images to cicle through.
     images = []
-    file_name =  "./stats/d=" + str(d) + "/q=" + str(q) + '/a0_' + str(d) + '_' + str(q) 
+
+    # Get d and q.
+    d = 2*int(label[0])
+    q = int(label[2])
+
+    file_name =  './stats/d=' + str(d) + '/q=' + str(q) + '/a1_' + label
     for n in [2,3,4,5]:
-        for i in range(10): #repeat same image 10 times
+        for i in range(10): # Repeat same image 10 times.
             images.append(file_name + '_10^' + str(n) + '.png')
-        if (n == 5): # pause on the last frame
-            for i in range(20): #repeat same image 20 times
+
+        if (n == 5): # Pause on the last frame.
+            for i in range(30): # Repeat same image 30 times.
                 images.append(file_name + '_10^' + str(n) + '.png')
 
-    # build gif
+    # Build gif.
     gif_name = file_name + '.gif'
     with imageio.get_writer(gif_name, mode='I') as writer:
         for filename in images:
             image = imageio.imread(filename)
             writer.append_data(image)
 
-#_____________________________________________________________
-
-'''
-gif_histogram: .gif for one (d,q)-a0 histogram
-
-'''
-def gif_histogram(polyname):
-    
-    # build list with images to cicle through
-    images = []
-
-    # get d and q
-    d = polyname[2] # the third letter is always the degree
-    q = str(int(float(polyname[-1])**(2/float(d)))) # the last letter is always the prime power
-
-    
-    # remove the '*' from name and delete spaces
-    polyname = polyname.replace('*','')
-    polyname = polyname.replace(' ','')
-    
-    file_name =  "./stats/d=" + d + "/q=" + q + '/a0_' + polyname
-    for n in [2,3,4,5]: 
-        for i in range(10): #repeat same image 10 times
-            images.append(file_name + '_10^' + str(n) + '.png')
-
-        if (n == 5): # pause on the last frame
-            for i in range(20): #repeat same image 20 times
-                images.append(file_name + '_10^' + str(n) + '.png')
-
-    # build gif
-    gif_name = file_name + '.gif'
-    with imageio.get_writer(gif_name, mode='I') as writer:
-        for filename in images:
-            image = imageio.imread(filename)
-            writer.append_data(image)
-
-#_____________________________________________________________
-
-'''
-gif_all_single_histograms:
-
-'''
+            
 def gif_all_single_histograms(d,q):
-    # read poly data
-    polydata = read_poly_data(d,q)
-    # loop over all files and delete them
-    for polyname in polydata:
-        gif_histogram(polyname)
+
+    labels = read_labels(d,q)
     
+    # loop over all files and delete them
+    for label in labels:
+        gif_histogram(label)
+        
 
-#_____________________________________________________________
+
+
+d = 4
+q = 2
+
+'''
+for n in [2,3,5]:
+    d_q_histograms(d,q,n)
+'''
+
+gif_all_single_histograms(d,q)
+        
 # DELETE GARBAGE HISTOGRAMS (n=2,3,4)
-#_____________________________________________________________
-
+# ______________________________________________________________________________
 def delete_histograms(d,q,n):
     # read poly data
-    polydata = read_poly_data(d,q)
+    labels = read_labels(d,q)
     # loop over all files and delete them
-    for polyname in polydata:
-        # remove the '*' from name and delete spaces
-        polyname = polyname.replace('*','')
-        polyname = polyname.replace(' ','')
-        directory =  "./stats/d=" + str(d) + "/q=" + str(q) + '/'
-        file_name = 'a0_' + polyname + '_10^' + str(n) + '.png'
+    for label in labels:
+        directory =  './stats/d=' + str(d) + '/q=' + str(q) + '/'
+        file_name = 'a1_' + label + '_10^' + str(n) + '.png'
         if os.path.exists(directory + file_name):
             os.remove(directory + file_name)
         else:
-            print("The file " + file_name + " does not exist!")
-        
+            print('The file ' + file_name + ' does not exist!')
 
+'''            
+for n in [2,3,4]:
+    delete_histograms(d,q,n)
+'''
