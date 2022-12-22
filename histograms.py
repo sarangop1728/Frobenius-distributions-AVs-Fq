@@ -55,7 +55,7 @@ def k_moment(sequence, k):
 
 def moments(d,q,N=5,M=10):
 
-    a1 = read_sequence_data(4,2,N)
+    a1 = read_sequence_data(d,q,N)
 
     values = {}
 
@@ -72,8 +72,8 @@ def moments(d,q,N=5,M=10):
 def histogram(label,n):
 
     # Read d and q.
-    d = 2*int(label[0])
-    q = int(label[2])
+    d = 2*int(label.split(".")[0])
+    q = int(label.split(".")[1])
 
     # Number of buckets.
     buckets = (2**(n-1))*10
@@ -108,6 +108,14 @@ def d_q_histograms(d,q,n):
 
     for label in labels:
         histogram(label,n)
+
+
+d = 2
+q = 691
+        
+for n in [2,3,4,5]:
+    histogram('1.691.abc',n)
+    
 
 
 # GIFs (n=2,3,4,5)
@@ -149,16 +157,13 @@ def gif_all_single_histograms(d,q):
         
 
 
-
-d = 4
-q = 2
-
 '''
 for n in [2,3,5]:
     d_q_histograms(d,q,n)
 '''
 
-gif_all_single_histograms(d,q)
+
+# gif_all_single_histograms(d,q)
         
 # DELETE GARBAGE HISTOGRAMS (n=2,3,4)
 # ______________________________________________________________________________

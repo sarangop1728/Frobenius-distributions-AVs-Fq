@@ -254,8 +254,8 @@ def labels_to_txt(d,q,extremal=True):
 # Generate files.
 # ______________________________________________________________________________
 
-q = 2
-d = 4
+q = 691
+d = 2
 
 labels_to_txt(d,q)
 
