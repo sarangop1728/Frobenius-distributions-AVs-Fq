@@ -1,10 +1,11 @@
-import csv 
+import csv
 import os
+import time
 
 
 # Global objects.
 
-prec = 1000
+prec = 500
 CC = ComplexField(prec)
 RR = RealField(prec)
 R.<x> = PolynomialRing(QQ)
@@ -46,11 +47,14 @@ def base_10_to_alphabet(number):
 
 def base_alphabet_to_10(letters):
     '''Convert an alphabet number (string) to its decimal representation'''
+    sgn = 1
+    if letters[0] == 'a' and len(letters)>1:
+        letters = letters[1:]
+        sgn = -1
 
-    return sum(
-            (ord(letter) - a_lowercase)*alphabet_size**i
-            for i, letter in enumerate(reversed(letters))
-    )
+    number = sgn*sum((ord(letter) - a_lowercase)*alphabet_size**i for i, letter in enumerate(reversed(letters)))
+
+    return number
 
 # q-Weil polynomial to LMFDB label.
 
@@ -68,6 +72,18 @@ def lmfdb_label(poly, q):
     iso = '_'.join(base_10_to_alphabet(Integer(coeff)) for coeff in coefficients)
 
     return str(g) + '.' + str(q) + '.' + iso
+
+# Returns Frobenius polynomial from label.
+def poly_from_label(label):
+    g = ZZ(label.split(".")[0])
+    q = ZZ(label.split(".")[1])
+    iso = label[4:]
+    coeffs = [base_alphabet_to_10(letters) for letters in list(iso.split('_'))]
+    all_coeffs = [1] + coeffs
+    reverse = all_coeffs[-2::-1]
+    all_coeffs += [q*q^i*reverse[i] for i in range(g)]
+    return R(all_coeffs[::-1])
+
 
 
 # qPolyClass
@@ -96,8 +112,11 @@ class qPolyClass:
         '''Initialise'''
 
         self.poly = qpoly
-        self.dim = self.poly.degree() // 2
-        self.q = ZZ(RR((self.poly).coefficients()[0])**(1/self.dim))
+        self.p, self.a = ZZ((self.poly).coefficients()[0]).perfect_power()
+        # q^g = p^a -> a = rg.
+        self.g = self.poly.degree() // 2
+        self.r = self.a // self.g
+        self.q = (self.p)^(self.r)
         self.name = str(self.poly)
         self.is_irreducible = self.poly.is_irreducible()
         self.galois_group = self.poly.splitting_field('z').galois_group() # 'z' the generator of the Galois closure.
@@ -110,15 +129,16 @@ class qPolyClass:
         '''Repr'''
         return 'q-Weil data for {p}'.format(p = self.label)
 
-    
+
 def poly_class_list(d,q, with_extremal_angle_ranks = True):
-    '''list of all qPolyClass data of dimension d and prime power q.'''
-    
+    '''list of all qPolyClass data of 
+    ension d and prime power q.'''
+
     poly_list =  [qPolyClass(p) for p in R.weil_polynomials(d,q)]
 
     # Filter out the extremal angle ranks.
     if not with_extremal_angle_ranks:
-        poly_list = list(filter(lambda x : x.angle_rank != 0 and x.angle_rank != x.dim, poly_list))
+        poly_list = list(filter(lambda x : x.angle_rank != 0 and x.angle_rank != x.g, poly_list))
 
     poly_list.sort(key = lambda x : x.angle_rank) # Sort by angle rank.
 
@@ -131,7 +151,7 @@ def poly_class_list(d,q, with_extremal_angle_ranks = True):
 def a1_sequence(qpolyClass, N = 10^6):
     '''Generator sequence of normalized traces of frobenius. Default length = 10^6.'''
 
-    g = qpolyClass.dim
+    g = qpolyClass.g
     q = qpolyClass.q
     label = qpolyClass.label
     q_weil_numbers = qpolyClass.roots
@@ -152,7 +172,7 @@ def moments(sequence, N=10):
                 approx = round(0.0,1)
             moments.append(approx)
     return moments
-    
+
 
 # Exporting data.
 # ______________________________________________________________________________
@@ -173,13 +193,10 @@ def a1_to_csv(d,q,n,extremal=True):
 
     # Directory
     new_dir = './stats/d=' + str(d) + '/q=' + str(q) 
-    if not os.getcwd()[-9:] == 'q-moments':
-        print('Make sure you are in the q-moments directory!')
-    else:
-        if not os.path.exists(new_dir):
+    if not os.path.exists(new_dir):
             os.makedirs(new_dir)
     path = new_dir + '/' + file_name
-    
+
     # Write csv file.
     with open(path, 'w') as csvfile:
 
@@ -189,6 +206,42 @@ def a1_to_csv(d,q,n,extremal=True):
 
         for label in a1_dict.keys():
             writer.writerow({'Label' : label, 'a_1': a1_dict[label]})
+            timestamp = time.time()
+            print('label ' + label + ' written at ' + str(timestamp))
+
+# single label sequence
+def a1_label_csv(label, n):
+
+    # Create qPolyData.
+    poly = qPolyClass(poly_from_label(label))
+    d = 2*ZZ(label.split(".")[0])
+    q = ZZ(label.split(".")[1])
+
+    # Dictionary of a_1 sequences with lmfdb label as keys.
+    a1_dict = {label : list(a1_sequence(poly,10^n))}
+
+    # Header.
+    fieldnames = ['Label', 'a_1']
+
+    # Filename
+    file_name = 'a1_' + label + '_10^' + str(n) + '.csv'
+
+    # Directory
+    new_dir = './stats/d=' + str(d) + '/q=' + str(q) 
+    if not os.path.exists(new_dir):
+            os.makedirs(new_dir)
+    path = new_dir + '/' + file_name
+
+    # Write csv file.
+    with open(path, 'w') as csvfile:
+
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+
+        for lab in a1_dict.keys():
+            writer.writerow({'Label' : lab, 'a_1': a1_dict[lab]})
+
 
 
 def moments_to_csv(d,q,extremal=True):
@@ -207,11 +260,8 @@ def moments_to_csv(d,q,extremal=True):
 
     # Directory.
     new_dir = './stats/d=' + str(d) + '/q=' + str(q) 
-    if not os.getcwd()[-9:] == 'q-moments':
-        print('Make sure you are in the q-moments directory!')
-    else:
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
+    if not os.path.exists(new_dir):
+        os.makedirs(new_dir)
     path = new_dir + '/' + file_name
 
     # Write csv file.
@@ -237,11 +287,8 @@ def labels_to_txt(d,q,extremal=True):
 
     # Directory.
     new_dir = './stats/d=' + str(d) + '/q=' + str(q) 
-    if not os.getcwd()[-9:] == 'q-moments':
-        print('Make sure you are in the q-moments directory!')
-    else:
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
+    if not os.path.exists(new_dir):
+        os.makedirs(new_dir)
     path = new_dir + '/' + file_name
 
     # Writting the file.
@@ -254,10 +301,10 @@ def labels_to_txt(d,q,extremal=True):
 # Generate files.
 # ______________________________________________________________________________
 
-q = 691
-d = 2
 
-labels_to_txt(d,q)
+labels = ['1.2.ab']
 
-for n in [2,3,4,5]:
-    a1_to_csv(d,q,n)
+for label in labels:
+    for n in [2,3,4,5,6]:
+        a1_label_csv(label,n)
+
