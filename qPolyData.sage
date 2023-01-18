@@ -75,9 +75,9 @@ def lmfdb_label(poly, q):
 
 # Returns Frobenius polynomial from label.
 def poly_from_label(label):
-    g = ZZ(label.split(".")[0])
-    q = ZZ(label.split(".")[1])
-    iso = label[4:]
+    g = ZZ(label.split('.')[0])
+    q = ZZ(label.split('.')[1])
+    iso = label.split('.')[2]
     coeffs = [base_alphabet_to_10(letters) for letters in list(iso.split('_'))]
     all_coeffs = [1] + coeffs
     reverse = all_coeffs[-2::-1]
@@ -214,8 +214,8 @@ def a1_label_csv(label, n):
 
     # Create qPolyData.
     poly = qPolyClass(poly_from_label(label))
-    d = 2*ZZ(label.split(".")[0])
-    q = ZZ(label.split(".")[1])
+    d = 2*ZZ(label.split('.')[0])
+    q = ZZ(label.split('.')[1])
 
     # Dictionary of a_1 sequences with lmfdb label as keys.
     a1_dict = {label : list(a1_sequence(poly,10^n))}
@@ -296,15 +296,4 @@ def labels_to_txt(d,q,extremal=True):
         for row in labels:
             F.write(row)
             F.write('\n')
-
-
-# Generate files.
-# ______________________________________________________________________________
-
-
-labels = ['1.2.ab']
-
-for label in labels:
-    for n in [2,3,4,5,6]:
-        a1_label_csv(label,n)
 
