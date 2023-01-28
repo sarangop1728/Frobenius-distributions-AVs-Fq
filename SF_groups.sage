@@ -5,9 +5,10 @@ In this script we calculate the Serre-Frobenius groups of isogeny classes of
 abelian varieties in dimension less than or equal to 3, using the results of 
 our paper.
 '''
-
+#_____________________________________________________________________________________
 # Supersingular elliptic curves
 #_____________________________________________________________________________________
+
 def SF_ss_simple_1(karg):
     '''
     Input: LMFDB label or Frobenius poly of a (supersingular) elliptic curve E over Fq.
@@ -52,6 +53,19 @@ def SF_ss_simple_1(karg):
             assert a1 == ZZ(sqrt(p*q)) or a1 == -ZZ(sqrt(p*q)), 'Something is wrong.. {a1} should be \pm {ZZ(sqrt(p*q))}.'
             return 12
 
+# Dictionary with torision order set M = M(p,d) data.
+SS_1_M_data_d_even = {
+    1:['(-)',{1}],
+    2:['(p not 1 mod 3)',{1,3,6}],
+    3:['(p not 1 mod 4)',{1,4}]
+    }
+
+SS_1_M_data_d_odd = {
+    1:['(-)',{4}],
+    2:['(p=2)',{4,8}],
+    3:['(p=3)',{4,12}]
+    }
+    
 #_____________________________________________________________________________________
 
 # Supersingular non-simple surfaces
@@ -82,7 +96,7 @@ def SF_ss_nonsimple_2(karg):
         poly1 = F[0][0]
         return SF_ss_simple_1(poly1)
 
-    #_____________________________________________________________________________________
+#_____________________________________________________________________________________
 
 # Supersingular simple surfaces
 #_____________________________________________________________________________________
@@ -147,10 +161,151 @@ def SF_ss_simple_2(karg):
             assert [a1,a2] == [ZZ(sqrt(p*q)),3*q] or [a1,a2] == [-ZZ(sqrt(p*q)),3*q], f'Something is wrong..'
             return 10
         else:
-            print('fuck!')
             assert p == 2, f'Something is wrong.. p should be 2.'
             assert [a1,a2] == [ZZ(sqrt(p*q)),3*q] or [a1,a2] == [-ZZ(sqrt(p*q)),3*q], f'Something is wrong..'
             return 10
         
+
+def create_nonsimple_SS_2_M_data_d_even():
+    '''
+    Input: No input.
+    Output: Dictionary with all torsion order sets.
+    '''
+    data_dict = dict()
+    counter = 1
+    for i in SS_1_M_data_d_even:
+        for j in SS_1_M_data_d_even:
+            category = ''
+            if i == j: # When S ~ E1xE2 of same (p,d)-type.
+                category = SS_1_M_data_d_even[i][0]
+                M = SS_1_M_data_d_even[i][1]
+                data_dict[counter] = [category,M]
+                counter += 1
+            elif i < j and i > 1: # When S ~ E1xE2 of different (p,d)-type.
+                category = SS_1_M_data_d_even[i][0] + 'x' + SS_1_M_data_d_even[j][0]
+                I = SS_1_M_data_d_even[i][1]
+                J = SS_1_M_data_d_even[j][1]
+                M = {lcm(x) for x in cartesian_product([I,J])}                
+                data_dict[counter] = [category,M]
+                counter += 1
+    return data_dict
+
+
+def create_nonsimple_SS_2_M_data_d_odd():
+    '''
+    Input: No input.
+    Output: Dictionary with all torsion order sets.
+    '''
+    data_dict = dict()
+    counter = 1
+    for i in SS_1_M_data_d_odd:
+        category = ''
+        category = SS_1_M_data_d_odd[i][0]
+        M = SS_1_M_data_d_odd[i][1]
+        data_dict[counter] = [category,M]
+        counter += 1
+    return data_dict
+
+# non-simple surface data
+SS_2_nonsimple_M_data_d_even = create_nonsimple_SS_2_M_data_d_even()
+SS_2_nonsimple_M_data_d_odd = create_nonsimple_SS_2_M_data_d_odd()
+
+# ----
+
+def create_simple_SS_2_M_data_d_even():
+    '''
+    Input: No input.
+    Output: Dictionary with all torsion order sets.
+    '''
+    data_dict = dict()
+    categories = ['(p not 1 mod 8)', '(p not 1 mod 12)', '(p not 1 mod 5)', '(p 1 mod 4)', '(p 1 mod 3)']
+    torsion_sets = [{8}, {12}, {5,10}, {4}, {3,6}]
+    for i in range(len(categories)):
+        data_dict[i+1] = [categories[i], torsion_sets[i]]
+
+    return data_dict
+
+def create_simple_SS_2_M_data_d_odd():
+    '''
+    Input: No input.
+    Output: Dictionary with all torsion order sets.
+    '''
+    data_dict = dict()
+    categories = ['(p not 2)', '(-)', '(p not 3)', '(p = 5)', '(p = 2)']
+    torsion_sets = [{8}, {2,6}, {12}, {10}, {24}]
+    for i in range(len(categories)):
+        data_dict[i+1] = [categories[i], torsion_sets[i]]
+
+    return data_dict
+
+
+
+# simple surface data
+SS_2_simple_M_data_d_even = create_simple_SS_2_M_data_d_even()
+SS_2_simple_M_data_d_odd = create_simple_SS_2_M_data_d_odd()
+#_____________________________________________________________________________________
+
+# Supersingular simple threefolds
+#_____________________________________________________________________________________
+
+def create_simple_SS_3_M_data_d_even():
+    '''
+    Input: No input.
+    Output: Dictionary with all torsion order sets.
+    '''
+    data_dict = dict()
+    categories = ['(7 nmid p^3-1)', '(p not 1 mod 3)']
+    torsion_sets = [{7,14}, {9,18}]
+    for i in range(len(categories)):
+        data_dict[i+1] = [categories[i], torsion_sets[i]]
     
-        
+    return data_dict
+
+def create_simple_SS_3_M_data_d_odd():
+    '''
+    Input: No input.
+    Output: Dictionary with all torsion order sets.
+    '''
+    data_dict = dict()
+    categories = ['(p=7)', '(p=3)']
+    torsion_sets = [{28}, {36}]
+    for i in range(len(categories)):
+        data_dict[i+1] = [categories[i], torsion_sets[i]]
+    
+    return data_dict
+
+# simple threefold data
+SS_3_simple_M_data_d_even = create_simple_SS_3_M_data_d_even()
+SS_3_simple_M_data_d_odd = create_simple_SS_3_M_data_d_odd()
+
+#_____________________________________________________________________________________
+
+# Supersingular non-simple threefolds
+# (In this case X ~ SxE for supersingular S and E.)
+#_____________________________________________________________________________________
+
+
+def create_nonsimple_SS_3_M_data_d_even():
+    '''
+    Input: No input.
+    Output: Dictionary with all torsion order sets.
+    '''
+    data_dict = dict()
+    counter = 1
+    # S simple.
+    for i in SS_2_simple_M_data_d_even:
+        for j in SS_1_M_data_d_even:
+            category = SS_2_simple_M_data_d_even[i][0] + 'x' + SS_1_M_data_d_even[j][0]
+            I = SS_2_simple_M_data_d_even[i][1]
+            J = SS_1_M_data_d_even[j][1]
+            M = {lcm(x) for x in cartesian_product([I,J])}
+            data_dict[counter] = [category, M]
+            counter += 1
+    return data_dict
+
+
+
+
+
+# non-simple threefold data
+SS_3_nonsimple_M_data_d_even = create_nonsimple_SS_3_M_data_d_even()
