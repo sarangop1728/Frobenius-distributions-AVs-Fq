@@ -16,9 +16,9 @@ class m_case:
     def m_list(self, m_list):
         self.m_list=m_list
 ########Dimension 1 cases     
-ec_1_mod4 = m_case("ec_1_mod4", 4, [1]);
-ec_1_mod4.dim=1
-ec_1_mod4.m_list=[4]
+ec_not_1_mod4 = m_case("ec_not_1_mod4", 4, [1]);
+ec_not_1_mod4.dim=1
+ec_not_1_mod4.m_list=[4]
 ##
 ec_not_1_mod3 = m_case("ec_not_1_mod3", 3, [0, 2])
 ec_not_1_mod3.dim=1
@@ -50,7 +50,7 @@ ss_not_1_mod12 = m_case("ss_not_1_mod12", 12, [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
 ss_not_1_mod12.dim=2
 ss_not_1_mod12.m_list=[12]
 ################
-dim1_cases=[ec_1_mod4, ec_not_1_mod3, ec_all]
+dim1_cases=[ec_not_1_mod4, ec_not_1_mod3, ec_all]
 dim2_cases=[ss_1_mod4, ss_1_mod3, ss_not_1_mod5, ss_not_1_mod8, ss_not_1_mod12];
 
 ###########
