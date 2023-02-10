@@ -1,6 +1,7 @@
+##q-square: product of elliptic curve and simple surface.
 
 #############----------
-##Create a set of objects corresponding to each simple case
+##Create a set of objects corresponding to each simple case when q is a square
 ##Both in dimension 1 and dimension 2.
 #############----------
 
