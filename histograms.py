@@ -142,7 +142,8 @@ def histogram(label,n):
 def histogram_from_label(label,n):
 
     # Read d and q.
-    d = 2*int(label.split(".")[0])
+    g = int(label.split(".")[0])
+    d = 2*g
     q = int(label.split(".")[1])
 
     # Number of buckets.
@@ -155,16 +156,17 @@ def histogram_from_label(label,n):
     # Plot
     title = 'a1 distribution for ' + label
     subtitle = '( 10^' + str(n) + ' data points and ' + str(buckets) + ' buckets )'
-    figure_name = 'a1_' + label + '_10^' + str(n) + '.png'
-    bins = np.arange(-2,2,2/buckets)
+    figure_name = 'a1_' + label + '_10^' + str(n) + '.pdf'
+    bins = np.arange(-d,d,2*d/buckets)
     fig , ax = plt.subplots()
-    fig.suptitle(title, fontsize=11)
+    fig.suptitle(title, fontsize=12)
     ax.set_title(subtitle, fontsize=9)
     ax.hist(sequence[label], bins, density = True, color = 'hotpink')
     ax.set_yticks([])
-    ax.set_xticks([-2,0,2])
-    ax.set_ylim([0,1.6])
-    ax.set_xlim([-2.1,2.1])
+    ax.set_xticks([])
+    ax.set_ylim([0,2/d]) # Vertical scaling.
+    ax.set_xlim([-d,d])
+    ax.axhline(y = 1/(2*d), color = 'lightgray', linestyle = '-') # Uniform distribution baseline.
     momts = 'Moments: ' + str(moment_data[label])
     momts_new = momts.replace('[','').replace(']','').replace("'",'').replace(',',' ')
     ax.set_xlabel(momts_new, fontsize=10)
@@ -245,7 +247,9 @@ for n in [2,3,4,5,6]:
 # GENERATE DATA
 # ______________________________________________________________________________
 
-labels = ['1.2.ab']
+all_paper_labels =  ['1.2.ab', '2.2.ab_a', '2.5.a_ab', '2.25.ac_bz', '2.2.ab_b', '2.2.a_ad', '2.2.ab_ab', '2.3.ac_c', '2.2.ad_f', '2.2.ac_f', '2.2.a_d', '2.7.af_s', '2.5.ag_s', '2.7.aj_bi', '3.2.a_a_ac', '3.2.a_a_ad', '3.2.a_a_af', '3.2.ab_b_b', '3.2.ab_f_ad', '3.2.ad_f_ah', '3.2.ad_j_an', '3.2.ae_j_ap', '3.2.ae_k_ar', '3.3.ad_d_ac', '3.3.af_p_abg', '3.3.af_r_abi', '3.5.ak_bv_afc', '3.7.ao_di_alk', '3.8.ag_bk_aea', '3.8.ai_bk_aeq']
+            
+labels = ['2.2.ab_a']
 
 for label in labels:
     for n in [2,3,4,5,6]:
