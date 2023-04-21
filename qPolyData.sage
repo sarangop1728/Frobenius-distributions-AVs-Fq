@@ -84,8 +84,21 @@ def poly_from_label(label):
     all_coeffs += [q*q^i*reverse[i] for i in range(g)]
     return R(all_coeffs[::-1])
 
+# random functions
+# ______________________________________________________________________________
 
-
+def repeated_roots_list(l):
+    '''
+    Recieves a list l with entries given by pairs (r,m) where r is a root and m
+    is its multiplicity. Reurns a list with all the repeated roots in a list. For
+    example:
+               repeated_roots_list([(0,1), (2,3)]) = [0,2,2,2].
+    '''
+    L = []
+    for pair in l:
+        L = L + [pair[0]]*pair[1]
+    return L
+    
 # qPolyClass
 # ______________________________________________________________________________
 
@@ -120,7 +133,7 @@ class qPolyClass:
         self.name = str(self.poly)
         self.is_irreducible = self.poly.is_irreducible()
         self.galois_group = self.poly.splitting_field('z').galois_group() # 'z' the generator of the Galois closure.
-        self.roots = self.poly.base_extend(CC).roots(ring = CC, multiplicities = False)
+        self.roots = repeated_roots_list(self.poly.base_extend(CC).roots(ring = CC, multiplicities = True))
         self.angle_rank = num_angle_rank(self.poly)
         self.trace_poly = self.poly.trace_polynomial()[0]
         self.label = lmfdb_label(self.poly, self.q)
@@ -156,8 +169,9 @@ def a1_sequence(qpolyClass, N = 10^6):
     label = qpolyClass.label
     q_weil_numbers = qpolyClass.roots
     F = diagonal_matrix(q_weil_numbers)
-
-    return (RR((F^r).trace()/(sqrt(q)^r)) for r in range(1,N+1))
+    normalized_F = F/sqrt(q)
+    
+    return (RR((normalized_F^r).trace()) for r in range(1,N+1))
 
 def moments(sequence, N=10):
     '''Returns the first N k-moments of the sequence, N=10 by default.'''
