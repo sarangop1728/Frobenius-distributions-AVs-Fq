@@ -171,7 +171,7 @@ def a1_sequence(qpolyClass, N = 10^6):
     F = diagonal_matrix(q_weil_numbers)
     normalized_F = F/sqrt(q)
     
-    return (RR((normalized_F^r).trace()) for r in range(1,N+1))
+    return (RR((normalized_F^r).trace().real()) for r in range(1,N+1))
 
 def moments(sequence, N=10):
     '''Returns the first N k-moments of the sequence, N=10 by default.'''
