@@ -5,7 +5,7 @@ import time
 
 # Global objects.
 
-prec = 500
+prec = 53
 CC = ComplexField(prec)
 RR = RealField(prec)
 R.<x> = PolynomialRing(QQ)
