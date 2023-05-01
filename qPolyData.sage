@@ -91,7 +91,7 @@ def repeated_roots_list(l):
     '''
     Recieves a list l with entries given by pairs (r,m) where r is a root and m
     is its multiplicity. Reurns a list with all the repeated roots in a list. For
-    example:
+    example: 
                repeated_roots_list([(0,1), (2,3)]) = [0,2,2,2].
     '''
     L = []
@@ -174,7 +174,7 @@ def a1_sequence(qpolyClass, N = 10^6):
     return (RR((normalized_F^r).trace().real()) for r in range(1,N+1))
 
 def moments(sequence, N=10):
-    '''Returns the first N k-moments of the sequence, N=10 by default.'''
+    '''Returns the N first k-moments of the sequence, N=10 by default.'''
 
     seq_list = list(sequence)
     moments = []

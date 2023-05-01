@@ -251,7 +251,7 @@ all_paper_labels =  ['1.2.ab', '2.2.ab_a', '2.5.a_ab', '2.25.ac_bz', '2.2.ab_b',
             
 labels = ['3.8.ag_bk_aea']
 
-for label in labels:
-    for n in [6]:
+for label in all_paper_labels:
+    for n in [5]:
         histogram_from_label(label,n)
 #    gif_histogram(label)
