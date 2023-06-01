@@ -132,8 +132,10 @@ class qPolyClass:
         self.q = (self.p)^(self.r)
         self.name = str(self.poly)
         self.is_irreducible = self.poly.is_irreducible()
-        self.galois_group = self.poly.splitting_field('z').galois_group() # 'z' the generator of the Galois closure.
+        self.L = self.poly.splitting_field('z') # 'z' the generator of the Galois closure.
+        self.galois_group = self.L.galois_group() 
         self.roots = repeated_roots_list(self.poly.base_extend(CC).roots(ring = CC, multiplicities = True))
+        self.eigenvalues = repeated_roots_list(self.poly.base_extend(self.L).roots(ring = self.L, multiplicities = True))
         self.angle_rank = num_angle_rank(self.poly)
         self.trace_poly = self.poly.trace_polynomial()[0]
         self.label = lmfdb_label(self.poly, self.q)
@@ -161,17 +163,20 @@ def poly_class_list(d,q, with_extremal_angle_ranks = True):
 # a1 sequence & moments
 # ______________________________________________________________________________
 
-def a1_sequence(qpolyClass, N = 10^6):
+def a1_sequence(qpolyClass, N = 16^5):
     '''Generator sequence of normalized traces of frobenius. Default length = 10^6.'''
 
-    g = qpolyClass.g
-    q = qpolyClass.q
-    label = qpolyClass.label
+    #g = qpolyClass.g
+    #q = qpolyClass.q
+    #label = qpolyClass.label
     q_weil_numbers = qpolyClass.roots
-    F = diagonal_matrix(q_weil_numbers)
-    normalized_F = F/sqrt(q)
+    #F = diagonal_matrix(q_weil_numbers)
+    #normalized_F = F/sqrt(q)
+    #return (RR((normalized_F^r).trace().real()) for r in range(1,N+1))
+    #poly = qpolyClass.poly
+    angles = [z.argument() for z in q_weil_numbers]
+    return [-sum(cos(r*a) for a in angles) for r in range(1,N+1)]
     
-    return (RR((normalized_F^r).trace().real()) for r in range(1,N+1))
 
 def moments(sequence, N=10):
     '''Returns the N first k-moments of the sequence, N=10 by default.'''
@@ -288,19 +293,19 @@ def moments_to_csv(d,q,extremal=True):
         for label in moments_dict.keys():
             writer.writerow({'Label' : label, 'a_1 moments': moments_dict[label]})
 
-def labels_to_txt(d,q,extremal=True):
+def labels_to_txt(g,q,extremal=True):
 
     # Create list of qPolyData.
-    poly_list = poly_class_list(d,q,extremal)
+    poly_list = poly_class_list(2*g,q,extremal)
 
     # List of trace sequences.
     labels = [P.label for P in poly_list]
 
     # Filename.
-    file_name = str(d) + '_' + str(q) + '_labels.txt'
+    file_name = str(g) + '_' + str(q) + '_labels.txt'
 
     # Directory.
-    new_dir = './stats/d=' + str(d) + '/q=' + str(q) 
+    new_dir = './stats/g=' + str(g) + '/q=' + str(q) 
     if not os.path.exists(new_dir):
         os.makedirs(new_dir)
     path = new_dir + '/' + file_name
