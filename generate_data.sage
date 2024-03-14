@@ -79,6 +79,8 @@ def all_histograms(g,q, exponents=[2,3,4,5], extension='.pdf'):
             print('histogram ' + label + '_16^' + str(n) + ' has been generated...')
     print('That is all, folks!')
 
+simple_ao_labels1 = ["3.4.ae_n_abc", "3.4.ad_ad_w", "3.4.ad_d_c", "3.4.ac_ad_q", "3.4.ad_j_au"]
+simple_ao_labels2 = ["3.3.ac_e_ad", "3.2.ac_d_ag", "3.3.ae_k_av"]
 # paper_histograms(labels)
 # all_histograms(2,2,exponents=[5],extension='.png')
 # labels_to_txt(2,2)
