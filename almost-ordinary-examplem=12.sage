@@ -2,7 +2,7 @@ load("qPolyData.sage")
 # -----------------------------------------------------------
 # Example 6.4.2
 # m = 12
-# link: https://www.lmfdb.org/Variety/Abelian/Fq/3/4/ae_n_abc
+# link: https://www.lmfdb.org/Variety/Abelian/Fq/3/3/ac_e_ad
 # -----------------------------------------------------------
 # LMFDB label:
 label = "3.3.ac_e_ad"
