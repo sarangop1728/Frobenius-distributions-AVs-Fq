@@ -53,14 +53,6 @@ def histogram_from_label(label, n=5, paper_hist = False, extension = '.pdf'):
 
 # Generate histograms
 # ______________________________________________________________________________
-
-all_paper_labels = ['1.2.ab', '2.2.ab_a', '2.5.a_ab', '2.25.ac_bz', '2.2.ab_b', '2.2.a_ad', '2.2.ab_ab', '2.3.ad_i', '2.3.ac_c', '2.2.ad_f', '2.2.ac_f', '2.2.a_d', '2.7.af_s', '2.5.ag_s', '2.7.aj_bi', '3.2.a_a_ac', '3.2.a_a_ad', '3.2.a_a_af', '3.2.ab_b_b', '3.2.ab_f_ad', '3.2.ad_f_ah', '3.2.ad_j_an', '3.2.ae_j_ap', '3.2.ae_k_ar', '3.3.ad_d_ac', '3.3.af_p_abg', '3.3.af_r_abi', '3.5.ak_bv_afc', '3.7.ao_di_alk', '3.8.ag_bk_aea', '3.8.ai_bk_aeq']
-
-paper_labels = [ '3.2.a_a_ac', '3.2.a_a_ad', '3.2.a_a_af', '3.2.ab_b_b', '3.2.ab_f_ad', '3.2.ad_f_ah', '3.2.ad_j_an', '3.2.ae_j_ap', '3.2.ae_k_ar', '3.3.ad_d_ac', '3.3.af_p_abg', '3.3.af_r_abi', '3.5.ak_bv_afc', '3.7.ao_di_alk', '3.8.ag_bk_aea', '3.8.ai_bk_aeq']
-
-labels =  ['2.5.a_ab', '2.25.ac_bz']
-    
-
 def paper_histograms(labels, exponents=[2,3,4,5]):
     for label in labels:
         for n in exponents:
@@ -79,8 +71,18 @@ def all_histograms(g,q, exponents=[2,3,4,5], extension='.pdf'):
             print('histogram ' + label + '_16^' + str(n) + ' has been generated...')
     print('That is all, folks!')
 
-simple_ao_labels1 = ["3.4.ae_n_abc", "3.4.ad_ad_w", "3.4.ad_d_c", "3.4.ac_ad_q", "3.4.ad_j_au"]
-simple_ao_labels2 = ["3.3.ac_e_ad", "3.2.ac_d_ag", "3.3.ae_k_av"]
+# Paper Labels
+ord_E = ["1.2.ab"]
+simple_ord_S = ["2.2.ab_b", "2.2.a_ad", "2.2.ab_ab", "2.3.ac_c", "2.2.ad_f"]
+split_ord_S = ["2.3.ad_i", "2.2.ac_f", "2.2.a_d", "2.7.af_s", "2.5.ag_s", "2.7.aj_bi"]
+split_ao_S = ["2.4.ah_u", "2.4.b_ae", "2.4.ab_c", "2.4.ad_i", "2.4.af_o", "2.2.ad_g", "2.3.af_m"]
+simple_ord_X = ["3.2.ad_f_ah", "3.2.a_a_ad", "3.2.ae_j_ap"]
+split_ord_X = ["3.2.ad_j_an", "3.2.ab_f_ad", "3.2.a_a_af", "3.5.ak_bv_afc", "3.7.ao_di_alk","3.3.af_r_abi", "3.2.ab_b_b", "3.3.ad_d_ac", "3.3.af_p_abg", "3.2.ae_k_ar"]
+simple_ao_X = ["3.4.ae_n_abc", "3.4.ad_ad_w", "3.4.ad_d_c", "3.4.ac_ad_q", "3.4.ad_j_au", "3.2.ac_d_ag", "3.3.ac_e_ad"]
+simple_prank0_X = ["3.8.ag_bk_aea", "3.2.a_a_ac", "3.8.ai_bk_aeq"]
+
+paper_labels = ord_E + simple_ord_S + split_ord_S + split_ao_S + simple_ord_X + simple_ord_X + simple_ao_X + simple_prank0_X
+
 # paper_histograms(labels)
 # all_histograms(2,2,exponents=[5],extension='.png')
 # labels_to_txt(2,2)

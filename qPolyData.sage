@@ -150,7 +150,7 @@ def a1_sequence(qpolyClass, N = 16^5):
     '''Generator sequence of normalized traces of frobenius. Default length = 16^5.'''
     q_weil_numbers = qpolyClass.roots
     angles = [z.argument() for z in q_weil_numbers]
-    return [-sum(cos(r*a) for a in angles) for r in range(1,N+1)]
+    return [sum(cos(r*a) for a in angles) for r in range(1,N+1)]
     
 
 def moments(sequence, N=10):
