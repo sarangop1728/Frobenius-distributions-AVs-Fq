@@ -72,6 +72,7 @@ def all_histograms(g,q, exponents=[2,3,4,5], extension='.pdf'):
     print('That is all, folks!')
 
 # Paper Labels
+ss_E = ["1.4.ae", "1.4.e", "1.4.c", "1.4.a", "1.4.ac", "1.2.ac", "1.3.ad"]
 ord_E = ["1.2.ab"]
 simple_ord_S = ["2.2.ab_b", "2.2.a_ad", "2.2.ab_ab", "2.3.ac_c", "2.2.ad_f"]
 split_ord_S = ["2.3.ad_i", "2.2.ac_f", "2.2.a_d", "2.7.af_s", "2.5.ag_s", "2.7.aj_bi"]
