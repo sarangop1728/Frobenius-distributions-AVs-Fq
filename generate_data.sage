@@ -81,7 +81,7 @@ simple_ord_X = ["3.2.ad_f_ah", "3.2.a_a_ad", "3.2.ae_j_ap"]
 split_ord_X = ["3.2.ad_j_an", "3.2.ab_f_ad", "3.2.a_a_af", "3.5.ak_bv_afc", "3.7.ao_di_alk","3.3.af_r_abi", "3.2.ab_b_b", "3.3.ad_d_ac", "3.3.af_p_abg", "3.2.ae_k_ar"]
 simple_ao_X = ["3.4.ae_n_abc", "3.4.ad_ad_w", "3.4.ad_d_c", "3.4.ac_ad_q", "3.4.ad_j_au", "3.2.ac_d_ag", "3.3.ac_e_ad"]
 simple_prank0_X = ["3.8.ag_bk_aea", "3.2.a_a_ac", "3.8.ai_bk_aeq"]
-
+split_ao_X = ["3.4.aj_bl_ado", "3.4.ab_ad_m", "3.4.ad_h_ao", "3.4.af_r_abo", "3.4.ah_bb_aco", "3.2.af_n_aw", "3.3.ah_x_abw"]
 paper_labels = ord_E + simple_ord_S + split_ord_S + split_ao_S + simple_ord_X + simple_ord_X + simple_ao_X + simple_prank0_X
 
 # paper_histograms(labels)
