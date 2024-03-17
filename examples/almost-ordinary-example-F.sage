@@ -1,7 +1,6 @@
 load("qPolyData.sage")
 # -----------------------------------------------------------
-# Example 6.4.2
-# m = 8
+# Example 6.4.2 (F)
 # link: https://www.lmfdb.org/Variety/Abelian/Fq/3/2/ac_d_ag
 # -----------------------------------------------------------
 # LMFDB label:
