@@ -49,7 +49,6 @@ def histogram_from_label(label, n=5, paper_hist = False, extension = '.pdf'):
     figure_name = 'a1_' + label + '_16^' + str(n) + extension 
     path =  directory + '/' + figure_name
     q_histogram(data, n, g, label).save(path) 
-     
 
 # Generate histograms
 # ______________________________________________________________________________
@@ -81,14 +80,8 @@ simple_ord_X = ["3.2.ad_f_ah", "3.2.a_a_ad", "3.2.ae_j_ap"]
 split_ord_X = ["3.2.ad_j_an", "3.2.ab_f_ad", "3.2.a_a_af", "3.5.ak_bv_afc", "3.7.ao_di_alk","3.3.af_r_abi", "3.2.ab_b_b", "3.3.ad_d_ac", "3.3.af_p_abg", "3.2.ae_k_ar"]
 simple_ao_X = ["3.4.ae_n_abc", "3.4.ad_ad_w", "3.4.ad_d_c", "3.4.ac_ad_q", "3.4.ad_j_au", "3.2.ac_d_ag", "3.3.ac_e_ad"]
 simple_prank0_X = ["3.8.ag_bk_aea", "3.2.a_a_ac", "3.8.ai_bk_aeq"]
-split_ao_X = ["3.4.aj_bl_ado", "3.4.ab_ad_m", "3.4.ad_h_ao", "3.4.af_r_abo", "3.4.ah_bb_aco", "3.2.af_n_aw", "3.3.ah_x_abw"]
-paper_labels = ord_E + simple_ord_S + split_ord_S + split_ao_S + simple_ord_X + simple_ord_X + simple_ao_X + simple_prank0_X
-
-# paper_histograms(labels)
-# all_histograms(2,2,exponents=[5],extension='.png')
-# labels_to_txt(2,2)
-
-# for n in [2,3,4,5,6]:
-#     for label in labels:
-#         histogram_from_label(label,n,paper_hist=False,extension='.png')
-#         print('histogram ' + label + '_16^' + str(n) + ' was calculated!')
+split_ao_X_rank2 = ["3.4.aj_bl_ado", "3.4.ab_ad_m", "3.4.ad_h_ao", "3.4.af_r_abo", "3.4.ah_bb_aco", "3.2.af_n_aw", "3.3.ah_x_abw"]
+split_ao_X_rank1 = ["3.4.ak_bt_aem", "3.4.e_ad_abc", "3.4.ae_j_ao", "3.4.ag_v_abw", "3.4.ai_bh_ade", "3.2.ac_ab_g", "3.4.ab_g_ai", "3.2.ad_d_ac"]
+X_prank1 = ["3.4.al_ca_afg", "3.4.f_e_ai", "3.4.b_e_ae", "3.4.ad_m_ay", "3.4.ab_c_e", "3.4.ah_bc_acq", "3.2.af_o_ay", "3.5.b_a_ak", "3.3.ai_be_aco", "3.2.b_c_g"]
+X_prank0_xing = ["3.8.ag_bk_aea", "3.2.a_a_ac", "3.8.ai_bk_aeq"]
+paper_labels = ord_E + simple_ord_S + split_ord_S + split_ao_S + simple_ord_X + simple_ord_X + simple_ao_X + simple_prank0_X + split_ao_X_rank2 + X_prank0_xing
